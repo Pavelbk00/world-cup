@@ -1,0 +1,108 @@
+/** Идентификатор матча из каталога турнира */
+export type MatchId = string;
+
+export interface MatchDef {
+  id: MatchId;
+  /** Дата матча (календарь) */
+  date: string;
+  /** Время начала матча (МСК) */
+  time: string;
+  /** Название хозяев (условно первая команда) */
+  homeTeam: string;
+  /** Гости */
+  awayTeam: string;
+  /** Фаза / группа для отображения */
+  phase: string;
+  /**
+   * Если true — матч плей-офф, команды ещё не известны (заглушка).
+   * Редактирование прогнозов разрешено всегда.
+   */
+  isPlaceholder?: boolean;
+}
+
+/** Фактический или прогнозируемый счёт */
+export interface Score {
+  home: number;
+  away: number;
+}
+
+export interface PlayerPrediction {
+  matchId: MatchId;
+  /** Название группы матча */
+  groupName?: string;
+  /** Дата и время матча */
+  matchDateTime?: string;
+  /** Русское наименование матча для удобства заполнения JSON */
+  matchText?: string;
+  home: number;
+  away: number;
+}
+
+export type PlayoffWinMethod = "regular" | "extraTime" | "penalties";
+
+export interface GroupStandingPrediction {
+  group: string;
+  first: string;
+  second: string;
+  third?: string;
+  fourth?: string;
+}
+
+export interface PlayoffPrediction {
+  matchId: MatchId;
+  winner: string;
+  method: PlayoffWinMethod;
+}
+
+export interface MedalistsPrediction {
+  gold: string;
+  silver: string;
+  bronze: string;
+}
+
+/** Формат JSON одного игрока */
+export interface PlayerJson {
+  player: string;
+  predictions: PlayerPrediction[];
+  groupStandings?: GroupStandingPrediction[];
+  playoff?: PlayoffPrediction[];
+  topScorer?: string;
+  medalists?: MedalistsPrediction;
+}
+
+export interface PlayerState {
+  id: string;
+  login?: string;
+  name: string;
+  predictions: Map<MatchId, Score>;
+  groupStandings: GroupStandingPrediction[];
+  playoff: PlayoffPrediction[];
+  topScorer: string | null;
+  medalists: MedalistsPrediction | null;
+  rawJson: string;
+  parseError: string | null;
+}
+
+export interface MatchResultState {
+  def: MatchDef;
+  /** Строки полей ввода; итог для подсчёта — только если оба поля — неотрицательные целые */
+  homeInput: string;
+  awayInput: string;
+}
+
+/** Сводка по одному игроку после подсчёта */
+export interface PlayerScoreRow {
+  playerId: string;
+  name: string;
+  /** Сколько матчей с 3 / 2 / 1 / 0 очками */
+  byTier: { t3: number; t2: number; t1: number; t0: number };
+  /** Очки за угаданные команды в 1/16 финала */
+  groupStagePoints: number;
+  /** Очки за способ победы в плей-офф */
+  playoffBonusPoints: number;
+  /** Очки за лучшего бомбардира */
+  topScorerPoints: number;
+  /** Очки за призеров турнира */
+  medalistPoints: number;
+  total: number;
+}

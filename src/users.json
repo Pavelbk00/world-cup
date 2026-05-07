@@ -1,0 +1,34 @@
+{
+  "users": [
+    {
+      "login": "pavel",
+      "password": "esenina",
+      "nickname": "Пашок"
+    },
+    {
+      "login": "kirill",
+      "password": "ArneSlot",
+      "nickname": "Шевыч"
+    },
+    {
+      "login": "rusyy",
+      "password": "Milan",
+      "nickname": "Лёха"
+    },
+    {
+      "login": "khlam",
+      "password": "Arsenal",
+      "nickname": "Хлам"
+    },
+    {
+      "login": "lebed",
+      "password": "Moskow",
+      "nickname": "Лебедь"
+    },
+    {
+      "login": "roman",
+      "password": "River",
+      "nickname": "Роман"
+    }
+  ]
+}
