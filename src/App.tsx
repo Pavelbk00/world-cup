@@ -33,7 +33,7 @@ import {
   PLAYER_SLOTS,
   draftFromPredictionsMap,
 } from "./parsePlayerJson";
-import { savePlayer, loadAllPlayers, loadPlayerFile, loadMatchResults } from "./utils/api";
+import { savePlayer, loadAllPlayers, loadPlayerFile, loadMatchResults, isServerReachable } from "./utils/api";
 import usersData from "./users.json";
 
 const SLOT_MAP_KEY = "wc2026_login_slot";
@@ -150,6 +150,7 @@ export function App() {
   const [playersLoaded, setPlayersLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [playerLoading, setPlayerLoading] = useState(true);
+  const [serverReachable, setServerReachable] = useState<boolean | null>(null);
 
   // On mount, load players from API and match results
   useEffect(() => {
@@ -175,6 +176,14 @@ export function App() {
         setPlayers(loaded);
       }
       setPlayersLoaded(true);
+    })();
+  }, []);
+
+  // Check if server is reachable
+  useEffect(() => {
+    (async () => {
+      const reachable = await isServerReachable();
+      setServerReachable(reachable);
     })();
   }, []);
 
@@ -570,23 +579,38 @@ export function App() {
               <span className="sidebar-label">{item.label}</span>
             </button>
           ))}
-        </nav>
-        {user && (
-          <div className="sidebar-user">
-            <span className="user-name">{user.nickname}</span>
+          {user && (
             <button
+              key="logout"
               type="button"
-              className="btn btn-link logout-btn"
-              onClick={handleLogout}
+              className="sidebar-btn"
               title="Выйти"
+              onClick={handleLogout}
             >
-              Выйти
+              <span className="sidebar-icon">⏻</span>
+              <span className="sidebar-label">Выйти</span>
             </button>
-          </div>
-        )}
+          )}
+        </nav>
       </aside>
       <main className="main-content">
-        {!playersLoaded ? (
+        {serverReachable === false ? (
+          <section className="panel server-offline-panel">
+            <div className="server-offline-content">
+              <div className="server-offline-icon">⚡</div>
+              <h2>Сервер недоступен</h2>
+              <p>
+                Не удалось подключиться к серверу. Пожалуйста, убедитесь, что сервер запущен, и повторите попытку.
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => window.location.reload()}
+              >
+                Повторить попытку
+              </button>
+            </div>
+          </section>
+        ) : !playersLoaded ? (
           <section className="panel">
             <p className="hint">Загрузка...</p>
           </section>

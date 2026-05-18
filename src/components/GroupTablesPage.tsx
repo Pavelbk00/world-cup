@@ -13,16 +13,50 @@ export type GroupTableRow = {
   points: number;
 };
 
+export type ThirdPlaceRow = GroupTableRow & {
+  group: string;
+};
+
+/** Извлекает все команды каждой группы из определений матчей */
+function buildGroupTeams(matches: MatchResultState[]): Map<string, string[]> {
+  const groupTeams = new Map<string, Set<string>>();
+  for (const m of matches) {
+    if (!m.def.phase.toLowerCase().startsWith("группа")) continue;
+    const group = m.def.phase;
+    if (!groupTeams.has(group)) groupTeams.set(group, new Set());
+    groupTeams.get(group)!.add(m.def.homeTeam);
+    groupTeams.get(group)!.add(m.def.awayTeam);
+  }
+  const result = new Map<string, string[]>();
+  for (const [group, teams] of groupTeams.entries()) {
+    result.set(group, Array.from(teams));
+  }
+  return result;
+}
+
+function sortTableRows(rows: GroupTableRow[]): GroupTableRow[] {
+  return rows
+    .map((row) => ({ ...row, gd: row.gf - row.ga }))
+    .sort(
+      (a, b) =>
+        b.points - a.points ||
+        b.gd - a.gd ||
+        b.gf - a.gf ||
+        a.team.localeCompare(b.team, "ru"),
+    );
+}
+
 function buildPredictedGroupTables(
   player: PlayerState,
   matches: MatchResultState[],
 ): Map<string, GroupTableRow[]> {
-  const groups = new Map<string, Map<string, GroupTableRow>>();
+  const groupTeams = buildGroupTeams(matches);
 
-  const ensureTeam = (group: string, team: string): GroupTableRow => {
-    if (!groups.has(group)) groups.set(group, new Map());
-    const table = groups.get(group)!;
-    if (!table.has(team)) {
+  // Инициализируем пустыми строками для всех команд во всех группах
+  const groups = new Map<string, Map<string, GroupTableRow>>();
+  for (const [group, teams] of groupTeams.entries()) {
+    const table = new Map<string, GroupTableRow>();
+    for (const team of teams) {
       table.set(team, {
         team,
         played: 0,
@@ -35,16 +69,21 @@ function buildPredictedGroupTables(
         points: 0,
       });
     }
-    return table.get(team)!;
-  };
+    groups.set(group, table);
+  }
 
+  // Заполняем прогнозами игрока
   for (const m of matches) {
     if (!m.def.phase.toLowerCase().startsWith("группа")) continue;
     const pred = player.predictions.get(m.def.id);
     if (!pred) continue;
     const group = m.def.phase;
-    const home = ensureTeam(group, m.def.homeTeam);
-    const away = ensureTeam(group, m.def.awayTeam);
+    const table = groups.get(group);
+    if (!table) continue;
+
+    const home = table.get(m.def.homeTeam);
+    const away = table.get(m.def.awayTeam);
+    if (!home || !away) continue;
 
     home.played += 1;
     away.played += 1;
@@ -71,29 +110,18 @@ function buildPredictedGroupTables(
 
   const result = new Map<string, GroupTableRow[]>();
   for (const [group, teamsMap] of groups.entries()) {
-    const rows = Array.from(teamsMap.values()).map((row) => ({
-      ...row,
-      gd: row.gf - row.ga,
-    }));
-    rows.sort(
-      (a, b) =>
-        b.points - a.points ||
-        b.gd - a.gd ||
-        b.gf - a.gf ||
-        a.team.localeCompare(b.team, "ru"),
-    );
-    result.set(group, rows);
+    result.set(group, sortTableRows(Array.from(teamsMap.values())));
   }
   return result;
 }
 
 function buildActualGroupTables(matches: MatchResultState[]): Map<string, GroupTableRow[]> {
-  const groups = new Map<string, Map<string, GroupTableRow>>();
+  const groupTeams = buildGroupTeams(matches);
 
-  const ensureTeam = (group: string, team: string): GroupTableRow => {
-    if (!groups.has(group)) groups.set(group, new Map());
-    const table = groups.get(group)!;
-    if (!table.has(team)) {
+  const groups = new Map<string, Map<string, GroupTableRow>>();
+  for (const [group, teams] of groupTeams.entries()) {
+    const table = new Map<string, GroupTableRow>();
+    for (const team of teams) {
       table.set(team, {
         team,
         played: 0,
@@ -106,16 +134,20 @@ function buildActualGroupTables(matches: MatchResultState[]): Map<string, GroupT
         points: 0,
       });
     }
-    return table.get(team)!;
-  };
+    groups.set(group, table);
+  }
 
   for (const m of matches) {
     if (!m.def.phase.toLowerCase().startsWith("группа")) continue;
     const res = resultFromState(m);
     if (!res) continue;
     const group = m.def.phase;
-    const home = ensureTeam(group, m.def.homeTeam);
-    const away = ensureTeam(group, m.def.awayTeam);
+    const table = groups.get(group);
+    if (!table) continue;
+
+    const home = table.get(m.def.homeTeam);
+    const away = table.get(m.def.awayTeam);
+    if (!home || !away) continue;
 
     home.played += 1;
     away.played += 1;
@@ -142,24 +174,12 @@ function buildActualGroupTables(matches: MatchResultState[]): Map<string, GroupT
 
   const result = new Map<string, GroupTableRow[]>();
   for (const [group, teamsMap] of groups.entries()) {
-    const rows = Array.from(teamsMap.values()).map((row) => ({
-      ...row,
-      gd: row.gf - row.ga,
-    }));
-    rows.sort(
-      (a, b) =>
-        b.points - a.points ||
-        b.gd - a.gd ||
-        b.gf - a.gf ||
-        a.team.localeCompare(b.team, "ru"),
-    );
-    result.set(group, rows);
+    result.set(group, sortTableRows(Array.from(teamsMap.values())));
   }
   return result;
 }
 
 function isGroupFinished(groupName: string, actualTables: Map<string, GroupTableRow[]>): boolean {
-  // A group is finished if every team in it has played 3 matches
   const rows = actualTables.get(groupName);
   if (!rows || rows.length === 0) return false;
   return rows.every((r) => r.played === 3);
@@ -192,7 +212,6 @@ function computeGroupPoints(
     const qualifiedTeams = new Set(
       actualRows.slice(0, 2).map((r) => r.team.trim().toLowerCase()),
     );
-    // Also include third place if group has >= 3 teams (it's a 4-team group)
     if (actualRows.length >= 3) {
       qualifiedTeams.add(actualRows[2].team.trim().toLowerCase());
     }
@@ -233,6 +252,36 @@ const GROUP_ORDER = [
   "Группа I", "Группа J", "Группа K", "Группа L",
 ];
 
+/**
+ * Строит таблицу команд, занявших третьи места в группах,
+ * отсортированную по критериям ФИФА.
+ */
+function buildThirdPlaceTable(
+  actualTables: Map<string, GroupTableRow[]>,
+): ThirdPlaceRow[] {
+  const thirdPlaced: ThirdPlaceRow[] = [];
+
+  for (const [group, rows] of actualTables.entries()) {
+    if (rows.length >= 3) {
+      const third = rows[2];
+      thirdPlaced.push({
+        ...third,
+        group,
+      });
+    }
+  }
+
+  // Сортировка по критериям ФИФА: очки → разница → забитые → жребий
+  thirdPlaced.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.gd !== a.gd) return b.gd - a.gd;
+    if (b.gf !== a.gf) return b.gf - a.gf;
+    return a.team.localeCompare(b.team, "ru");
+  });
+
+  return thirdPlaced;
+}
+
 interface GroupTablesPageProps {
   selectedPlayer: PlayerState | null;
   activePlayers: PlayerState[];
@@ -263,6 +312,17 @@ export function GroupTablesPage({
         })
     : [];
 
+  const predictedTableMap = selectedPlayer
+    ? buildPredictedGroupTables(selectedPlayer, matches)
+    : new Map<string, GroupTableRow[]>();
+
+  const predictedThirdPlaceTable = buildThirdPlaceTable(predictedTableMap);
+  // Top 8 third-placed teams advance
+  const advancingLimit = 8;
+  const advancingThirdGroups = new Set(
+    predictedThirdPlaceTable.slice(0, advancingLimit).map((r) => r.group),
+  );
+
   return (
     <section className="panel">
       <div className="panel-head">
@@ -284,46 +344,115 @@ export function GroupTablesPage({
           ))}
         </select>
       </div>
+
       {!selectedPlayer ? (
-        <p className="hint">
-          Выберите игрока, чтобы увидеть групповые таблицы по его прогнозам.
+        <p className="hint" style={{ textAlign: "center", marginTop: "2rem" }}>
+          Выберите игрока, чтобы увидеть таблицы групп по его прогнозам.
         </p>
       ) : (
-        <div className="group-tables-grid">
-          {predictedGroupTables.map(([groupName, rows]) => {
-            const pts = groupPoints.get(groupName);
-            const finished = isGroupFinished(groupName, actualTables);
-            return (
-              <div key={groupName} className="table-wrap">
-                <table className="standings">
+        <>
+          <div className="group-tables-grid">
+            {predictedGroupTables.map(([groupName, predRows]) => {
+              const actualRows = actualTables.get(groupName);
+              const pts = groupPoints.get(groupName);
+              const finished = actualRows ? isGroupFinished(groupName, actualTables) : false;
+              return (
+                <div key={groupName} className="table-wrap">
+                  <table className="standings">
+                    <thead>
+                      <tr>
+                        <th colSpan={10}>
+                          {groupName}
+                          {finished && pts !== undefined ? (
+                            <span className="group-points"> — очки за группу: <strong>{pts}</strong></span>
+                          ) : !finished ? (
+                            <span className="group-points hint"> — группа ещё не сыграна</span>
+                          ) : null}
+                        </th>
+                      </tr>
+                      <tr>
+                        <th style={{textAlign: 'left'}}>#</th>
+                        <th style={{textAlign: 'left'}}>Команда</th>
+                        <th className="num">И</th>
+                        <th className="num">В</th>
+                        <th className="num">Н</th>
+                        <th className="num">П</th>
+                        <th className="num" title="Забито мячей">ЗМ</th>
+                        <th className="num" title="Пропущено мячей">ПМ</th>
+                        <th className="num" title="Разница мячей">РМ</th>
+                        <th className="num" title="Очки">О</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {predRows.map((row, idx) => {
+                        // Подсвечиваем строку, если в реальной таблице есть данные
+                        const actualRow = actualRows?.[idx];
+                        const isCorrectPos = actualRow?.team === row.team;
+                        // Команды, выходящие из группы: 1-е и 2-е места всегда,
+                        // 3-е — только если проходит как лучшая третья
+                        const isAdvancing = idx < 2 || (idx === 2 && advancingThirdGroups.has(groupName));
+                        const rowClass = isAdvancing
+                          ? "team-advancing"
+                          : isCorrectPos
+                          ? "team-correct-pos"
+                          : "";
+                        return (
+                          <tr key={row.team} className={rowClass}>
+                            <td className="place">{idx + 1}</td>
+                            <td>{row.team}</td>
+                            <td className="num">{row.played}</td>
+                            <td className="num">{row.wins}</td>
+                            <td className="num">{row.draws}</td>
+                            <td className="num">{row.losses}</td>
+                            <td className="num">{row.gf}</td>
+                            <td className="num">{row.ga}</td>
+                            <td className="num">{row.gd}</td>
+                            <td className="total">{row.points}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Таблица третьих мест по прогнозам игрока */}
+          {predictedThirdPlaceTable.length > 0 && (
+            <div className="third-place-section">
+              <h3>Таблица третьих мест</h3>
+              <p className="hint">
+                Команды, занявшие третьи места в группах по прогнозам игрока, отсортированные по критериям ФИФА.
+                {advancingLimit < predictedThirdPlaceTable.length
+                  ? ` В 1/16 финала выходят ${advancingLimit} из ${predictedThirdPlaceTable.length} команд.`
+                  : ""}
+              </p>
+              <div className="table-wrap">
+                <table className="standings third-place-table">
                   <thead>
                     <tr>
-                      <th colSpan={10}>
-                        {groupName}
-                        {finished && pts !== undefined ? (
-                          <span className="group-points"> — очки за группу: <strong>{pts}</strong></span>
-                        ) : !finished ? (
-                          <span className="group-points hint"> — группа ещё не сыграна</span>
-                        ) : null}
-                      </th>
-                    </tr>
-                    <tr>
-                      <th style={{textAlign: 'left'}}>#</th>
+                      <th>#</th>
+                      <th style={{textAlign: 'left'}}>Группа</th>
                       <th style={{textAlign: 'left'}}>Команда</th>
                       <th className="num">И</th>
                       <th className="num">В</th>
                       <th className="num">Н</th>
                       <th className="num">П</th>
-                      <th className="num" title="Забито мячей">ЗМ</th>
-                      <th className="num" title="Пропущено мячей">ПМ</th>
-                      <th className="num" title="Разница мячей">РМ</th>
-                      <th className="num" title="Очки">О</th>
+                      <th className="num">ЗМ</th>
+                      <th className="num">ПМ</th>
+                      <th className="num">РМ</th>
+                      <th className="num">О</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row, idx) => (
-                      <tr key={row.team}>
+                    {predictedThirdPlaceTable.map((row, idx) => (
+                      <tr
+                        key={`${row.group}-${row.team}`}
+                        className={idx < advancingLimit ? "team-qualified" : "team-eliminated"}
+                      >
                         <td className="place">{idx + 1}</td>
+                        <td>{row.group}</td>
                         <td>{row.team}</td>
                         <td className="num">{row.played}</td>
                         <td className="num">{row.wins}</td>
@@ -338,9 +467,9 @@ export function GroupTablesPage({
                   </tbody>
                 </table>
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+        </>
       )}
     </section>
   );
