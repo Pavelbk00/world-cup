@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { DEFAULT_MATCHES } from "./matches";
-import { isMatchFinished, isMatchPredictable } from "./matchUtils";
+import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "./matchUtils";
 import { computeStandings } from "./scoring";
 import type {
   MatchId,
   MatchResultState,
   MedalistsPrediction,
+  PlayerPrediction,
   PlayerState,
   GroupStandingPrediction,
-  PlayoffPrediction,
+  ScoreDraftEntry,
 } from "./types";
 import { getCurrentUser, logout, type User } from "./auth";
 
@@ -31,7 +32,6 @@ import {
   predictionsArrayFromDraft,
   mergePlayerRawJson,
   PLAYER_SLOTS,
-  draftFromPredictionsMap,
 } from "./parsePlayerJson";
 import { savePlayer, loadAllPlayers, loadPlayerFile, loadMatchResults, isServerReachable } from "./utils/api";
 import usersData from "./users.json";
@@ -101,19 +101,38 @@ type AppPage =
   | "halloffame";
 
 /** Creates a minimal empty player */
+const EMPTY_PLAYER: PlayerState = {
+  id: "",
+  login: "",
+  name: "",
+  predictions: new Map(),
+  groupStandings: [],
+  topScorer: null,
+  medalists: null,
+  rawJson: "",
+  parseError: null,
+};
+
 function emptyPlayer(): PlayerState {
-  return {
-    id: newPlayerId(),
-    login: "",
-    name: "",
-    predictions: new Map(),
-    groupStandings: [],
-    playoff: [],
-    topScorer: null,
-    medalists: null,
-    rawJson: "",
-    parseError: null,
-  };
+  return { ...EMPTY_PLAYER, id: newPlayerId() };
+}
+
+/** Преобразует карту прогнозов + winner/method в черновик счёта */
+function draftFromPredictionsMapShallow(
+  matches: typeof DEFAULT_MATCHES,
+  predictions: Map<MatchId, PlayerPrediction>,
+): Record<MatchId, ScoreDraftEntry> {
+  const r: Record<MatchId, ScoreDraftEntry> = {};
+  for (const m of matches) {
+    const s = predictions.get(m.id);
+    r[m.id] = {
+      h: s !== undefined ? String(s.home) : "",
+      a: s !== undefined ? String(s.away) : "",
+      winner: s?.winner,
+      method: s?.method,
+    };
+  }
+  return r;
 }
 
 export function App() {
@@ -163,9 +182,8 @@ export function App() {
           id: newPlayerId(),
           login: u.login,
           name: u.nickname,
-          predictions: new Map<string, { home: number; away: number }>(),
+          predictions: new Map<string, PlayerPrediction>(),
           groupStandings: [] as GroupStandingPrediction[],
-          playoff: [] as PlayoffPrediction[],
           topScorer: null,
           medalists: null,
           rawJson: "",
@@ -231,8 +249,8 @@ export function App() {
   const [participantSlot, setParticipantSlot] = useState<number>(-1);
   const [currentPlayer, setCurrentPlayer] = useState<PlayerState>(emptyPlayer);
   const [scoreDraft, setScoreDraft] = useState<
-    Record<MatchId, { h: string; a: string }>
-  >(() => draftFromPredictionsMap(DEFAULT_MATCHES, new Map()));
+    Record<MatchId, ScoreDraftEntry>
+  >(() => draftFromPredictionsMapShallow(DEFAULT_MATCHES, new Map()));
 
   // Medalists and top scorer draft
   const [medalistsDraft, setMedalistsDraft] = useState<MedalistsPrediction>({
@@ -270,17 +288,14 @@ export function App() {
       setParticipantSlot(slot);
       // Не перезаписываем currentPlayer, если у него уже есть прогнозы для этого логина
       if (currentPlayer.login !== cur.login || currentPlayer.predictions.size === 0) {
-        console.log("[slot allocation] overwrite because", { currentLogin: currentPlayer.login, curLogin: cur.login, predsSize: currentPlayer.predictions.size });
         setCurrentPlayer(players[slot]);
         setScoreDraft(
-          draftFromPredictionsMap(DEFAULT_MATCHES, players[slot].predictions),
+          draftFromPredictionsMapShallow(DEFAULT_MATCHES, players[slot].predictions),
         );
         setMedalistsDraft(
           players[slot].medalists ?? { gold: "", silver: "", bronze: "" },
         );
         setTopScorerDraft(players[slot].topScorer ?? "");
-      } else {
-        console.log("[slot allocation] skip overwrite, keeping currentPlayer with predictions", currentPlayer.predictions.size);
       }
     } else {
       setParticipantSlot(-1);
@@ -293,17 +308,14 @@ export function App() {
   useEffect(() => {
     if (!user || !playersLoaded) return;
     if (currentPlayer.predictions.size > 0) {
-      console.log("[loadPlayerFile] skip - already have predictions:", currentPlayer.predictions.size);
       return;
     }
     (async () => {
-      console.log("[loadPlayerFile] loading from server for", user.login);
       const loaded = await loadPlayerFile(user.login);
       if (loaded) {
-        console.log("[loadPlayerFile] loaded, predsSize:", loaded.predictions.size);
         setCurrentPlayer(loaded);
         setScoreDraft(
-          draftFromPredictionsMap(DEFAULT_MATCHES, loaded.predictions),
+          draftFromPredictionsMapShallow(DEFAULT_MATCHES, loaded.predictions),
         );
         setMedalistsDraft(
           loaded.medalists ?? { gold: "", silver: "", bronze: "" },
@@ -316,8 +328,6 @@ export function App() {
           }
           return next;
         });
-      } else {
-        console.log("[loadPlayerFile] nothing loaded (null)");
       }
     })();
   }, [user?.login]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -331,6 +341,23 @@ export function App() {
     return m;
   }, []);
 
+  const lastFinishedMatchLabel = useMemo(() => {
+    const finished = matches
+      .filter((m) => {
+        const h = parseInt(m.homeInput, 10);
+        const a = parseInt(m.awayInput, 10);
+        return !isNaN(h) && !isNaN(a);
+      })
+      .sort((a, b) => {
+        const dateA = a.def.date + " " + a.def.time;
+        const dateB = b.def.date + " " + b.def.time;
+        return dateA.localeCompare(dateB);
+      });
+    if (finished.length === 0) return null;
+    const last = finished[finished.length - 1];
+    return last.def.homeTeam + " – " + last.def.awayTeam;
+  }, [matches]);
+
   const standingsByPlayerId = useMemo(() => {
     const map = new Map(standings.map((row) => [row.playerId, row]));
     const rows: Array<{
@@ -338,7 +365,6 @@ export function App() {
       name: string;
       hasValidData: boolean;
       byTier: { t3: number; t2: number; t1: number; t0: number };
-      matchPoints: number;
       groupStagePoints: number;
       playoffBonusPoints: number;
       topScorerPoints: number;
@@ -355,13 +381,11 @@ export function App() {
       const row = map.get(p.id);
       const hasValidData = Boolean(p.name.trim()) && !p.parseError;
       const byTier = row?.byTier ?? { t3: 0, t2: 0, t1: 0, t0: 0 };
-      const matchPoints = byTier.t3 * 6 + byTier.t2 * 3 + byTier.t1 * 1;
       rows.push({
         key: p.id,
         name: displayName,
         hasValidData,
         byTier,
-        matchPoints,
         groupStagePoints: row?.groupStagePoints ?? 0,
         playoffBonusPoints: row?.playoffBonusPoints ?? 0,
         topScorerPoints: row?.topScorerPoints ?? 0,
@@ -433,7 +457,21 @@ export function App() {
     if (matchDef && (isMatchFinished(matchDef) || !isMatchPredictable(matchDef))) return;
     setScoreDraft((prev) => ({
       ...prev,
-      [matchId]: { h: home, a: away },
+      [matchId]: { ...prev[matchId], h: home, a: away },
+    }));
+  };
+
+  const handleWinnerChange = (matchId: string, winner: string) => {
+    setScoreDraft((prev) => ({
+      ...prev,
+      [matchId]: { ...prev[matchId], winner },
+    }));
+  };
+
+  const handleMethodChange = (matchId: string, method: ScoreDraftEntry["method"]) => {
+    setScoreDraft((prev) => ({
+      ...prev,
+      [matchId]: { ...prev[matchId], method },
     }));
   };
 
@@ -447,12 +485,30 @@ export function App() {
     const name = (currentPlayer.name || user.nickname || "").trim();
     if (!name) return;
 
-    // Собираем прогнозы из draft напрямую, не полагаясь на buildPlayerFromDraft
-    const predsMap = new Map<string, { home: number; away: number }>();
+    // Проверка: есть ли хотя бы один счёт
+    const hasAnyScore = Object.values(scoreDraft).some((s) => s.h !== "" && s.a !== "");
+    if (!hasAnyScore) return;
+
+    // Проверка: если в плей-офф указана ничья, должен быть выбран победитель и способ
+    const hasIncompletePlayoffDraws = DEFAULT_MATCHES
+      .filter((m) => isPlayoffPhase(m.phase) && isMatchPredictable(m) && !isMatchFinished(m))
+      .some((m) => {
+        const d = scoreDraft[m.id];
+        return d && d.h !== "" && d.a !== "" && d.h === d.a && (!d.winner || !d.method);
+      });
+    if (hasIncompletePlayoffDraws) return;
+
+    // Собираем прогнозы из draft напрямую
+    const predsMap = new Map<string, PlayerPrediction>();
     for (const m of DEFAULT_MATCHES) {
       const d = scoreDraft[m.id];
       if (d && d.h !== "" && d.a !== "") {
-        predsMap.set(m.id, { home: Number(d.h), away: Number(d.a) });
+        const pred: PlayerPrediction = { home: Number(d.h), away: Number(d.a) };
+        if (d.winner && d.method) {
+          pred.winner = d.winner;
+          pred.method = d.method;
+        }
+        predsMap.set(m.id, pred);
       }
     }
     const arr = predictionsArrayFromDraft(DEFAULT_MATCHES, scoreDraft);
@@ -464,6 +520,7 @@ export function App() {
       ? (currentPlayer.medalists ?? { gold: "", silver: "", bronze: "" })
       : medalistsDraft;
 
+    // mergePlayerRawJson теперь принимает только predictionsArr (winner/method внутри)
     const raw = mergePlayerRawJson(currentPlayer.rawJson, name, arr);
     const updated: PlayerState = {
       id: currentPlayer.id,
@@ -471,17 +528,14 @@ export function App() {
       name,
       predictions: predsMap,
       groupStandings: [],
-      playoff: [],
       topScorer: effectiveTopScorer.trim() || null,
       medalists: effectiveMedalists.gold ? effectiveMedalists : null,
       rawJson: raw,
       parseError: null,
     };
     setSaveStatus("saving");
-    console.log("[handleSave] before save, currentPlayer predsSize:", currentPlayer.predictions.size, "updated predsSize:", updated.predictions.size);
     const ok = await savePlayer(updated, user.login);
     if (ok) {
-      console.log("[handleSave] save ok, setting currentPlayer and players");
       setSaveStatus("saved");
       // Force set currentPlayer with updated predictions
       setCurrentPlayer({
@@ -587,7 +641,13 @@ export function App() {
               title="Выйти"
               onClick={handleLogout}
             >
-              <span className="sidebar-icon">⏻</span>
+              <span className="sidebar-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+              </span>
               <span className="sidebar-label">Выйти</span>
             </button>
           )}
@@ -656,6 +716,8 @@ export function App() {
             player={currentPlayer}
             scoreDraft={scoreDraft}
             onScoreChange={handleScoreChange}
+            onWinnerChange={handleWinnerChange}
+            onMethodChange={handleMethodChange}
             medalistsDraft={medalistsDraft}
             onMedalistsChange={setMedalistsDraft}
             topScorerDraft={topScorerDraft}
@@ -666,6 +728,7 @@ export function App() {
         ) : page === "standings" ? (
           <StandingsPage
             standingsByPlayerId={standingsByPlayerId}
+            lastFinishedMatchLabel={lastFinishedMatchLabel}
             onSelectPlayer={setSelectedPlayerId}
           />
         ) : (

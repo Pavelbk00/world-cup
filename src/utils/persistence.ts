@@ -13,7 +13,6 @@ export function emptyPlayers(): PlayerState[] {
     name: "",
     predictions: new Map(),
     groupStandings: [],
-    playoff: [],
     topScorer: null,
     medalists: null,
     rawJson: "",

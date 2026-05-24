@@ -21,7 +21,6 @@ export interface ExportShape {
   player: string;
   predictions: PlayerPrediction[];
   groupStandings: PlayerState["groupStandings"];
-  playoff: PlayerState["playoff"];
   topScorer: PlayerState["topScorer"];
   medalists: PlayerState["medalists"];
 }
@@ -41,13 +40,12 @@ function buildExport(player: PlayerState): ExportShape | null {
       away: score.away,
     });
   }
-  predictions.sort((a, b) => a.matchId.localeCompare(b.matchId));
+  predictions.sort((a, b) => (a.matchId ?? "").localeCompare(b.matchId ?? ""));
 
   return {
     player: name,
     predictions,
     groupStandings: player.groupStandings,
-    playoff: player.playoff,
     topScorer: player.topScorer,
     medalists: player.medalists,
   };
@@ -97,18 +95,18 @@ export async function loadPlayerFile(name: string): Promise<PlayerState | null> 
       return { ...parsed[0], id: newPlayerId(), parseError: null };
     }
     // fallback: build from data
-    const predsMap = new Map<string, { home: number; away: number }>();
+    const predsMap = new Map<string, PlayerPrediction>();
     for (const p of data.predictions) {
-      if (typeof p.home === "number" && typeof p.away === "number") {
-        predsMap.set(p.matchId, { home: p.home, away: p.away });
-      }
+      const prediction: PlayerPrediction = { home: p.home, away: p.away };
+      if (p.winner) prediction.winner = p.winner;
+      if (p.method) prediction.method = p.method;
+      if (p.matchId) predsMap.set(p.matchId, prediction);
     }
     return {
       id: newPlayerId(),
       name: data.player,
       predictions: predsMap,
       groupStandings: data.groupStandings ?? [],
-      playoff: data.playoff ?? [],
       topScorer: data.topScorer ?? null,
       medalists: data.medalists ?? null,
       rawJson: text,
@@ -138,23 +136,23 @@ export async function loadAllPlayers(): Promise<PlayerState[]> {
           result.push({ ...parsed[0], id: newPlayerId(), parseError: null });
         } else {
           const data = JSON.parse(text) as ExportShape;
-          const predsMap = new Map<string, { home: number; away: number }>();
-          for (const p of data.predictions) {
-            if (typeof p.home === "number" && typeof p.away === "number") {
-              predsMap.set(p.matchId, { home: p.home, away: p.away });
-            }
-          }
-          result.push({
-            id: newPlayerId(),
-            name: data.player,
-            predictions: predsMap,
-            groupStandings: data.groupStandings ?? [],
-            playoff: data.playoff ?? [],
-            topScorer: data.topScorer ?? null,
-            medalists: data.medalists ?? null,
-            rawJson: text,
-            parseError: null,
-          });
+    const predsMap = new Map<string, PlayerPrediction>();
+    for (const p of data.predictions) {
+      const prediction: PlayerPrediction = { home: p.home, away: p.away };
+      if (p.winner) prediction.winner = p.winner;
+      if (p.method) prediction.method = p.method;
+      if (p.matchId) predsMap.set(p.matchId, prediction);
+    }
+    result.push({
+      id: newPlayerId(),
+      name: data.player,
+      predictions: predsMap,
+      groupStandings: data.groupStandings ?? [],
+      topScorer: data.topScorer ?? null,
+      medalists: data.medalists ?? null,
+      rawJson: text,
+      parseError: null,
+    });
         }
       } catch {
         // skip broken files

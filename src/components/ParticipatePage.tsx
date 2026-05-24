@@ -1,7 +1,7 @@
 import { useState } from "react";
-import type { MatchId, MedalistsPrediction, PlayerState, MatchDef } from "../types";
+import type { MatchId, MedalistsPrediction, PlayerState, MatchDef, ScoreDraftEntry } from "../types";
 import { DEFAULT_MATCHES } from "../matches";
-import { isMatchFinished, isMatchPredictable } from "../matchUtils";
+import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "../matchUtils";
 
 /** Парсит "DD.MM.YYYY HH:MM" в число для сравнения */
 function matchDateTimeToMs(dateStr: string, timeStr: string): number {
@@ -43,8 +43,10 @@ const FIRST_MATCH = (() => {
 
 interface ParticipatePageProps {
   player: PlayerState;
-  scoreDraft: Record<MatchId, { h: string; a: string }>;
+  scoreDraft: Record<MatchId, ScoreDraftEntry>;
   onScoreChange: (matchId: string, home: string, away: string) => void;
+  onWinnerChange: (matchId: string, winner: string) => void;
+  onMethodChange: (matchId: string, method: ScoreDraftEntry["method"]) => void;
   medalistsDraft: MedalistsPrediction;
   onMedalistsChange: (m: MedalistsPrediction) => void;
   topScorerDraft: string;
@@ -57,6 +59,8 @@ export function ParticipatePage({
   player,
   scoreDraft,
   onScoreChange,
+  onWinnerChange,
+  onMethodChange,
   medalistsDraft,
   onMedalistsChange,
   topScorerDraft,
@@ -69,6 +73,19 @@ export function ParticipatePage({
 
   // Фиксируем имя при первом рендере, чтобы оно не сбрасывалось после сохранения
   const [displayName] = useState(player.name);
+
+  /** Есть ли хотя бы один заполненный счёт в матчах */
+  const hasAnyScore = Object.values(scoreDraft).some((s) => s.h !== "" && s.a !== "");
+
+  /** Есть ли незавершённые ничьи в плей-офф (счёт указан, но не выбран победитель или способ) */
+  const hasIncompletePlayoffDraws = SORTED_MATCHES
+    .filter((m) => isPlayoffPhase(m.phase) && isMatchPredictable(m) && !isMatchFinished(m))
+    .some((m) => {
+      const d = scoreDraft[m.id];
+      return d && d.h !== "" && d.a !== "" && d.h === d.a && (!d.winner || !d.method);
+    });
+
+  const canSave = hasAnyScore && !hasIncompletePlayoffDraws;
 
   return (
     <section className="panel participate-panel" style={{maxWidth: '800px'}}>
@@ -90,10 +107,20 @@ export function ParticipatePage({
               type="button"
               className="btn btn-primary"
               onClick={onSave}
-              disabled={saveStatus === "saving"}
+              disabled={saveStatus === "saving" || !canSave}
             >
               {saveStatus === "saving" ? "Сохранение..." : "Сохранить"}
             </button>
+          )}
+          {!hasAnyScore && saveStatus !== "saved" && saveStatus !== "error" && (
+            <span className="hint" style={{ display: 'block', marginTop: '6px' }}>
+              Укажите счёт хотя бы в одном матче, чтобы сохранить прогноз
+            </span>
+          )}
+          {hasIncompletePlayoffDraws && (
+            <span className="hint" style={{ display: 'block', marginTop: '6px', color: '#e65100' }}>
+              Для ничейных матчей плей-офф укажите победителя и способ
+            </span>
           )}
         </div>
       </div>
@@ -102,6 +129,11 @@ export function ParticipatePage({
       <div className="participate-matches">
         {SORTED_MATCHES.map((m) => {
           const d = scoreDraft[m.id] ?? { h: "", a: "" };
+          const isDrawPlayoff =
+            isPlayoffPhase(m.phase) &&
+            isMatchPredictable(m) &&
+            d.h !== "" && d.a !== "" &&
+            d.h === d.a;
           return (
             <div key={m.id} className="match-row">
               <div className="match-meta">
@@ -155,6 +187,40 @@ export function ParticipatePage({
                   </>
                 )}
               </div>
+          {/* Для плей-офф при ничейном счёте — выбор победителя и способа */}
+          {isDrawPlayoff && (
+                <div className="playoff-prediction">
+                  <label className="playoff-winner-label">
+                    Победитель:
+                    <select
+                      value={d.winner ?? ""}
+                      onChange={(e) => onWinnerChange(m.id, e.target.value)}
+                      className="playoff-select"
+                    >
+                      <option value="">— выберите —</option>
+                      <option value={m.homeTeam}>{m.homeTeam}</option>
+                      <option value={m.awayTeam}>{m.awayTeam}</option>
+                    </select>
+                  </label>
+                  <label className="playoff-method-label">
+                    Способ:
+                    <select
+                      value={d.method ?? ""}
+                      onChange={(e) =>
+                        onMethodChange(
+                          m.id,
+                          e.target.value as ScoreDraftEntry["method"],
+                        )
+                      }
+                      className="playoff-select"
+                    >
+                      <option value="">— выберите —</option>
+                      <option value="extraTime">Дополнительное время</option>
+                      <option value="penalties">Серия пенальти</option>
+                    </select>
+                  </label>
+                </div>
+              )}
             </div>
           );
         })}
@@ -163,10 +229,15 @@ export function ParticipatePage({
       {/* Призёры и бомбардир после матчей */}
       <div className="tournament-picks-section">
         <h3>Призёры турнира</h3>
+        <p className="hint tournament-picks-hint">
+          🔒 Прогноз принимается строго до первого матча турнира — после старта изменить выбор нельзя
+        </p>
         <div className="medalists-grid">
           <label className="medalist-field">
-            <span className="medal-icon">🥇</span>
-            <span>Чемпион</span>
+            <span className="medalist-label-line">
+              <span className="medal-icon">🥇</span>
+              <span>Чемпион</span>
+            </span>
             {isFirstMatchStarted ? (
               <span className="medalist-value">
                 {medalistsDraft.gold ? (
@@ -192,8 +263,10 @@ export function ParticipatePage({
             )}
           </label>
           <label className="medalist-field">
-            <span className="medal-icon">🥈</span>
-            <span>Финалист</span>
+            <span className="medalist-label-line">
+              <span className="medal-icon">🥈</span>
+              <span>Финалист</span>
+            </span>
             {isFirstMatchStarted ? (
               <span className="medalist-value">
                 {medalistsDraft.silver ? (
@@ -219,8 +292,10 @@ export function ParticipatePage({
             )}
           </label>
           <label className="medalist-field">
-            <span className="medal-icon">🥉</span>
-            <span>3-е место</span>
+            <span className="medalist-label-line">
+              <span className="medal-icon">🥉</span>
+              <span>3-е место</span>
+            </span>
             {isFirstMatchStarted ? (
               <span className="medalist-value">
                 {medalistsDraft.bronze ? (

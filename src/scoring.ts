@@ -167,12 +167,13 @@ function scoreGroupStage(
 }
 
 function scorePlayoffBonus(player: PlayerState): number {
-  if (player.playoff.length === 0 || PLAYOFF_RESULTS.length === 0) return 0;
+  if (PLAYOFF_RESULTS.length === 0) return 0;
   const actualByMatch = new Map(PLAYOFF_RESULTS.map((x) => [x.matchId, x]));
   let points = 0;
-  for (const pred of player.playoff) {
-    const actual = actualByMatch.get(pred.matchId);
+  for (const [matchId, pred] of player.predictions) {
+    const actual = actualByMatch.get(matchId);
     if (!actual) continue;
+    if (!pred.winner || !actual.winner || !actual.method) continue;
     if (normalizeName(pred.winner) !== normalizeName(actual.winner)) continue;
     points += methodBonus(actual.method);
   }
@@ -221,12 +222,15 @@ export function computeStandings(
         t0 += 1;
         continue;
       }
-      const { points, tier } = pointsForMatch(res, pred);
+      const { points } = pointsForMatch(res, pred);
       total += points;
-      if (tier === 3) t3 += 1;
-      else if (tier === 2) t2 += 1;
-      else if (tier === 1) t1 += 1;
-      else t0 += 1;
+      const sameOutcome = outcome(pred) === outcome(res);
+      const sameDiff = diff(pred) === diff(res);
+      const exact = pred.home === res.home && pred.away === res.away;
+      if (sameOutcome) t1 += 1;
+      if (sameDiff) t2 += 1;
+      if (exact) t3 += 1;
+      if (!sameOutcome && !sameDiff && !exact) t0 += 1;
     }
     const groupStagePoints = scoreGroupStage(p, allGroupsFinished, placementsByGroup, qualifiedTeams);
     const playoffBonusPoints = scorePlayoffBonus(p);

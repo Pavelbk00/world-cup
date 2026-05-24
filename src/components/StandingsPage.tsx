@@ -4,18 +4,19 @@ interface StandingsPageProps {
     name: string;
     hasValidData: boolean;
     byTier: { t3: number; t2: number; t1: number; t0: number };
-    matchPoints: number;
     groupStagePoints: number;
     playoffBonusPoints: number;
     topScorerPoints: number;
     medalistPoints: number;
     total: number;
   }>;
+  lastFinishedMatchLabel: string | null;
   onSelectPlayer: (playerId: string) => void;
 }
 
 export function StandingsPage({
   standingsByPlayerId,
+  lastFinishedMatchLabel,
   onSelectPlayer,
 }: StandingsPageProps) {
   return (
@@ -29,10 +30,9 @@ export function StandingsPage({
             <tr>
               <th style={{textAlign: 'left'}}>#</th>
               <th style={{textAlign: 'left'}}>Игрок</th>
-              <th className="num">Счёт</th>
-              <th className="num">Разница</th>
-              <th className="num">Исход</th>
-              <th className="num">Матчи</th>
+              <th className="num">Счёт (3)</th>
+              <th className="num">Разница (2)</th>
+              <th className="num">Исход (1)</th>
               <th className="num">Группы</th>
               <th className="num">Плей-офф</th>
               <th className="num">Бомбардир</th>
@@ -57,10 +57,9 @@ export function StandingsPage({
                     row.name
                   )}
                 </td>
-                <td className="num">{row.byTier.t3}</td>
-                <td className="num">{row.byTier.t2}</td>
+                <td className="num">{row.byTier.t3 * 3}</td>
+                <td className="num">{row.byTier.t2 * 2}</td>
                 <td className="num">{row.byTier.t1}</td>
-                <td className="num">{row.matchPoints}</td>
                 <td className="num">{row.groupStagePoints}</td>
                 <td className="num">{row.playoffBonusPoints}</td>
                 <td className="num">{row.topScorerPoints}</td>
@@ -70,6 +69,11 @@ export function StandingsPage({
             ))}
           </tbody>
         </table>
+        {lastFinishedMatchLabel && (
+          <p className="hint" style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+            Последний сыгранный матч: {lastFinishedMatchLabel}
+          </p>
+        )}
       </div>
     </section>
   );

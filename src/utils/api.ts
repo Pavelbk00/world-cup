@@ -9,7 +9,6 @@ export interface ExportShape {
   player: string;
   predictions: PlayerPrediction[];
   groupStandings: PlayerState["groupStandings"];
-  playoff: PlayerState["playoff"];
   topScorer: PlayerState["topScorer"];
   medalists: PlayerState["medalists"];
   /** Дата и время последнего обновления прогнозов (ISO 8601) */
@@ -21,34 +20,40 @@ function buildExport(player: PlayerState, login: string): ExportShape {
   const predictions: PlayerPrediction[] = [];
   for (const [matchId, score] of player.predictions) {
     const def = DEFAULT_MATCHES.find((m) => m.id === matchId);
-    predictions.push({
+    const pred: PlayerPrediction = {
       matchId,
       groupName: def?.phase,
       matchDateTime: def ? `${def.date} ${def.time}` : undefined,
       matchText: def ? `${def.homeTeam} - ${def.awayTeam}` : undefined,
       home: score.home,
       away: score.away,
-    });
+    };
+    if (score.winner) pred.winner = score.winner;
+    if (score.method) pred.method = score.method;
+    predictions.push(pred);
   }
-  predictions.sort((a, b) => a.matchId.localeCompare(b.matchId));
+  predictions.sort((a, b) => (a.matchId ?? "").localeCompare(b.matchId ?? ""));
 
   return {
     login,
     player: name,
     predictions,
     groupStandings: player.groupStandings,
-    playoff: player.playoff,
     topScorer: player.topScorer,
     medalists: player.medalists,
   };
 }
 
 function exportShapeToPlayerState(data: ExportShape): PlayerState {
-  const predsMap = new Map<string, { home: number; away: number }>();
+  const predsMap = new Map<string, PlayerPrediction>();
   for (const p of data.predictions) {
-    if (typeof p.home === "number" && typeof p.away === "number") {
-      predsMap.set(p.matchId, { home: p.home, away: p.away });
-    }
+    const prediction: PlayerPrediction = {
+      home: p.home,
+      away: p.away,
+    };
+    if (p.winner) prediction.winner = p.winner;
+    if (p.method) prediction.method = p.method;
+    if (p.matchId) predsMap.set(p.matchId, prediction);
   }
   return {
     id: newPlayerId(),
@@ -56,7 +61,6 @@ function exportShapeToPlayerState(data: ExportShape): PlayerState {
     name: data.player,
     predictions: predsMap,
     groupStandings: data.groupStandings ?? [],
-    playoff: data.playoff ?? [],
     topScorer: data.topScorer ?? null,
     medalists: data.medalists ?? null,
     rawJson: "",

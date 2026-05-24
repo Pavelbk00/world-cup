@@ -18,6 +18,23 @@ export function isMatchFinished(m: MatchDef): boolean {
 }
 
 /**
+ * Возвращает true, если фаза является плей-офф (не группа).
+ */
+const PLAYOFF_PATTERNS = [
+  /^1\/\d+\s+финала$/i,
+  /^матч за 3-е место$/i,
+  /^финал/i,
+  /^полуфинал/i,
+  /^четвертьфинал/i,
+];
+
+export function isPlayoffPhase(phase: string): boolean {
+  const lower = phase.trim().toLowerCase();
+  if (lower.startsWith("групп")) return false;
+  return PLAYOFF_PATTERNS.some((p) => p.test(phase));
+}
+
+/**
  * Можно ли делать прогноз на матч?
  * Возвращает false для матчей-заглушек (команды ещё не известны).
  */

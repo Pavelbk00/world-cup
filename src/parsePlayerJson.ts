@@ -6,9 +6,7 @@ import type {
   PlayerJson,
   PlayerPrediction,
   PlayerState,
-  PlayoffPrediction,
   PlayoffWinMethod,
-  Score,
 } from "./types";
 
 const PLAYER_SLOTS = 6;
@@ -35,7 +33,7 @@ function str(x: unknown, path: string): string {
 export function parsePlayerObject(
   data: unknown,
   validIds: Set<MatchId>
-): Pick<PlayerState, "name" | "predictions" | "groupStandings" | "playoff" | "topScorer" | "medalists"> {
+): Pick<PlayerState, "name" | "predictions" | "groupStandings" | "topScorer" | "medalists"> {
   if (!isRecord(data)) {
     throw new Error("Корень должен быть объектом");
   }
@@ -44,7 +42,7 @@ export function parsePlayerObject(
   if (!Array.isArray(predsRaw)) {
     throw new Error("predictions должен быть массивом");
   }
-  const predictions = new Map<MatchId, Score>();
+  const predictions = new Map<MatchId, PlayerPrediction>();
   for (let i = 0; i < predsRaw.length; i++) {
     const p = predsRaw[i];
     const base = `predictions[${i}]`;
@@ -55,19 +53,18 @@ export function parsePlayerObject(
     if (!validIds.has(matchId)) {
       throw new Error(`${base}.matchId: неизвестный id «${matchId}»`);
     }
-    predictions.set(matchId, {
+    const pred: PlayerPrediction = {
       home: num(p.home, `${base}.home`),
       away: num(p.away, `${base}.away`),
-    });
-  }
-
-  const parseMethod = (x: unknown, path: string): PlayoffWinMethod => {
-    const value = str(x, path);
-    if (value !== "regular" && value !== "extraTime" && value !== "penalties") {
-      throw new Error(`${path}: допустимые значения — regular, extraTime, penalties`);
+    };
+    if (typeof p.winner === "string" && p.winner.trim()) {
+      pred.winner = p.winner.trim();
     }
-    return value;
-  };
+    if (typeof p.method === "string" && (p.method === "regular" || p.method === "extraTime" || p.method === "penalties")) {
+      pred.method = p.method;
+    }
+    predictions.set(matchId, pred);
+  }
 
   const groupStandingsRaw = data.groupStandings;
   const groupStandings: GroupStandingPrediction[] = [];
@@ -89,25 +86,6 @@ export function parsePlayerObject(
     }
   }
 
-  const playoffRaw = data.playoff;
-  const playoff: PlayoffPrediction[] = [];
-  if (playoffRaw !== undefined) {
-    if (!Array.isArray(playoffRaw)) {
-      throw new Error("playoff должен быть массивом");
-    }
-    for (let i = 0; i < playoffRaw.length; i++) {
-      const row = playoffRaw[i];
-      const base = `playoff[${i}]`;
-      if (!isRecord(row)) throw new Error(`${base}: ожидается объект`);
-      const matchId = str(row.matchId, `${base}.matchId`);
-      playoff.push({
-        matchId,
-        winner: str(row.winner, `${base}.winner`),
-        method: parseMethod(row.method, `${base}.method`),
-      });
-    }
-  }
-
   let medalists: MedalistsPrediction | null = null;
   if (data.medalists !== undefined) {
     if (!isRecord(data.medalists)) throw new Error("medalists: ожидается объект");
@@ -123,7 +101,7 @@ export function parsePlayerObject(
     topScorer = str(data.topScorer, "topScorer");
   }
 
-  return { name, predictions, groupStandings, playoff, topScorer, medalists };
+  return { name, predictions, groupStandings, topScorer, medalists };
 }
 
 /**
@@ -137,7 +115,7 @@ export function parsePlayersFile(
 ): {
   players: Pick<
     PlayerState,
-    "name" | "predictions" | "groupStandings" | "playoff" | "topScorer" | "medalists" | "rawJson"
+    "name" | "predictions" | "groupStandings" | "topScorer" | "medalists" | "rawJson"
   >[];
   error: string | null;
 } {
@@ -153,7 +131,7 @@ export function parsePlayersFile(
   }
   const out: Pick<
     PlayerState,
-    "name" | "predictions" | "groupStandings" | "playoff" | "topScorer" | "medalists" | "rawJson"
+    "name" | "predictions" | "groupStandings" | "topScorer" | "medalists" | "rawJson"
   >[] = [];
   for (let i = 0; i < items.length; i++) {
     try {
@@ -167,26 +145,27 @@ export function parsePlayersFile(
   return { players: out, error: null };
 }
 
-/** Черновик счёта из карты уже сохранённых прогнозов */
 export function draftFromPredictionsMap(
   matches: MatchDef[],
-  predictions: Map<MatchId, Score>,
-): Record<MatchId, { h: string; a: string }> {
-  const r: Record<MatchId, { h: string; a: string }> = {};
+  predictions: Map<MatchId, PlayerPrediction>,
+): Record<MatchId, { h: string; a: string; winner?: string; method?: PlayoffWinMethod }> {
+  const r: Record<MatchId, { h: string; a: string; winner?: string; method?: PlayoffWinMethod }> = {};
   for (const m of matches) {
     const s = predictions.get(m.id);
     r[m.id] = {
       h: s !== undefined ? String(s.home) : "",
       a: s !== undefined ? String(s.away) : "",
+      winner: s?.winner,
+      method: s?.method,
     };
   }
   return r;
 }
 
-/** Только полностью заполненные строки — в JSON и в разбор не попадут «пустые» матчи */
+/** Только полностью заполненные строки — в JSON */
 export function predictionsArrayFromDraft(
   matches: MatchDef[],
-  draft: Record<MatchId, { h: string; a: string }>,
+  draft: Record<MatchId, { h: string; a: string; winner?: string; method?: PlayoffWinMethod }>,
 ): PlayerPrediction[] {
   const out: PlayerPrediction[] = [];
   for (const m of matches) {
@@ -194,22 +173,23 @@ export function predictionsArrayFromDraft(
     if (!d) continue;
     const home = Number.parseInt(d.h, 10);
     const away = Number.parseInt(d.a, 10);
-    if (
-      !Number.isInteger(home) ||
-      home < 0 ||
-      !Number.isInteger(away) ||
-      away < 0
-    ) {
+    if (!Number.isInteger(home) || home < 0 || !Number.isInteger(away) || away < 0) {
       continue;
     }
-    out.push({
+    const pred: PlayerPrediction = {
       matchId: m.id,
       groupName: m.phase,
       matchDateTime: `${m.date} ${m.time}`,
       matchText: `${m.homeTeam} - ${m.awayTeam}`,
       home,
       away,
-    });
+    };
+    // Добавляем winner/method только если они указаны и счёт ничейный
+    if (d.winner && d.method && home === away) {
+      pred.winner = d.winner;
+      pred.method = d.method;
+    }
+    out.push(pred);
   }
   return out;
 }
@@ -260,13 +240,6 @@ export function playerJsonTemplate(matches: MatchDef[]): PlayerJson {
         second: "Команда 2",
         third: "Команда 3",
         fourth: "Команда 4",
-      },
-    ],
-    playoff: [
-      {
-        matchId: "wc-001",
-        winner: "Команда",
-        method: "regular",
       },
     ],
     topScorer: "Футболист",

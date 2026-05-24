@@ -26,8 +26,11 @@ export interface Score {
   away: number;
 }
 
+export type PlayoffWinMethod = "regular" | "extraTime" | "penalties";
+
 export interface PlayerPrediction {
-  matchId: MatchId;
+  /** Идентификатор матча (опционален, когда хранится в Map'е) */
+  matchId?: MatchId;
   /** Название группы матча */
   groupName?: string;
   /** Дата и время матча */
@@ -36,9 +39,11 @@ export interface PlayerPrediction {
   matchText?: string;
   home: number;
   away: number;
+  /** Для ничейных матчей плей-офф — прогнозируемый победитель */
+  winner?: string;
+  /** Для ничейных матчей плей-офф — способ определения победителя */
+  method?: PlayoffWinMethod;
 }
-
-export type PlayoffWinMethod = "regular" | "extraTime" | "penalties";
 
 export interface GroupStandingPrediction {
   group: string;
@@ -46,12 +51,6 @@ export interface GroupStandingPrediction {
   second: string;
   third?: string;
   fourth?: string;
-}
-
-export interface PlayoffPrediction {
-  matchId: MatchId;
-  winner: string;
-  method: PlayoffWinMethod;
 }
 
 export interface MedalistsPrediction {
@@ -65,7 +64,6 @@ export interface PlayerJson {
   player: string;
   predictions: PlayerPrediction[];
   groupStandings?: GroupStandingPrediction[];
-  playoff?: PlayoffPrediction[];
   topScorer?: string;
   medalists?: MedalistsPrediction;
 }
@@ -74,9 +72,8 @@ export interface PlayerState {
   id: string;
   login?: string;
   name: string;
-  predictions: Map<MatchId, Score>;
+  predictions: Map<MatchId, PlayerPrediction>;
   groupStandings: GroupStandingPrediction[];
-  playoff: PlayoffPrediction[];
   topScorer: string | null;
   medalists: MedalistsPrediction | null;
   rawJson: string;
@@ -105,4 +102,12 @@ export interface PlayerScoreRow {
   /** Очки за призеров турнира */
   medalistPoints: number;
   total: number;
+}
+
+/** Расширенная запись для draft-состояния на форме прогнозов */
+export interface ScoreDraftEntry {
+  h: string;
+  a: string;
+  winner?: string;
+  method?: PlayoffWinMethod;
 }

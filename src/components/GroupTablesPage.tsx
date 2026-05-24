@@ -373,10 +373,10 @@ export function GroupTablesPage({
                       <tr>
                         <th style={{textAlign: 'left'}}>#</th>
                         <th style={{textAlign: 'left'}}>Команда</th>
-                        <th className="num">И</th>
-                        <th className="num">В</th>
-                        <th className="num">Н</th>
-                        <th className="num">П</th>
+                        <th className="num" title="Игры">И</th>
+                        <th className="num" title="Выигрыш">В</th>
+                        <th className="num" title="Ничья">Н</th>
+                        <th className="num" title="Поражения">П</th>
                         <th className="num" title="Забито мячей">ЗМ</th>
                         <th className="num" title="Пропущено мячей">ПМ</th>
                         <th className="num" title="Разница мячей">РМ</th>
@@ -385,17 +385,10 @@ export function GroupTablesPage({
                     </thead>
                     <tbody>
                       {predRows.map((row, idx) => {
-                        // Подсвечиваем строку, если в реальной таблице есть данные
-                        const actualRow = actualRows?.[idx];
-                        const isCorrectPos = actualRow?.team === row.team;
-                        // Команды, выходящие из группы: 1-е и 2-е места всегда,
-                        // 3-е — только если проходит как лучшая третья
+                         // Команды, выходящие из группы: 1-е и 2-е места всегда,
+                         // 3-е — только если проходит как лучшая третья
                         const isAdvancing = idx < 2 || (idx === 2 && advancingThirdGroups.has(groupName));
-                        const rowClass = isAdvancing
-                          ? "team-advancing"
-                          : isCorrectPos
-                          ? "team-correct-pos"
-                          : "";
+                        const rowClass = isAdvancing ? "team-advancing" : "";
                         return (
                           <tr key={row.team} className={rowClass}>
                             <td className="place">{idx + 1}</td>
@@ -435,8 +428,8 @@ export function GroupTablesPage({
                       <th>#</th>
                       <th style={{textAlign: 'left'}}>Группа</th>
                       <th style={{textAlign: 'left'}}>Команда</th>
-                      <th className="num">И</th>
-                      <th className="num">В</th>
+                      <th className="num" title="Игры">И</th>
+                      <th className="num" title="Выигрыш">В</th>
                       <th className="num">Н</th>
                       <th className="num">П</th>
                       <th className="num">ЗМ</th>
