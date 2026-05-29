@@ -1,10 +1,19 @@
 {
   "player": "Лёха",
   "login": "rusyy",
-  "predictions": [],
+  "predictions": [
+    {
+      "matchId": "wc-001",
+      "groupName": "Группа A",
+      "matchDateTime": "11.06.2026 22:00",
+      "matchText": "Мексика - ЮАР",
+      "home": 0,
+      "away": 0
+    }
+  ],
   "groupStandings": [],
   "playoff": [],
   "topScorer": null,
   "medalists": null,
-  "updated_at": "2026-05-17T14:37:00.000Z"
+  "updated_at": "2026-05-29T07:08:54.746Z"
 }
