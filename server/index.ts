@@ -361,6 +361,9 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
   // Скрываем groupStandings для не-владельцев
   filtered.groupStandings = [];
 
+  // Скрываем rawJson — там могут быть полные прогнозы
+  delete filtered.rawJson;
+
   return filtered;
 }
 

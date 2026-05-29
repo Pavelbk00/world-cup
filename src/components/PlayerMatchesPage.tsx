@@ -91,11 +91,11 @@ export function PlayerMatchesPage({
                   </div>
                 </td>
                 <td className="num">
-                  {pred
-                    ? `${pred.home}:${pred.away}`
-                    : !isOwner && !actual
-                      ? "🔒"
-                      : "—"}
+                  {isOwner || actual
+                    ? pred
+                      ? `${pred.home}:${pred.away}`
+                      : "—"
+                    : "🔒"}
                 </td>
                 <td className="num">
                   {actual
