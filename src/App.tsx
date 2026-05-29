@@ -672,7 +672,10 @@ export function App() {
           </section>
         ) : !playersLoaded ? (
           <section className="panel">
-            <p className="hint">Загрузка...</p>
+            <div className="loading-container">
+              <div className="spinner" />
+              <p className="loading-text">Загрузка...</p>
+            </div>
           </section>
         ) : page === "welcome" ? (
           <WelcomePage
@@ -703,7 +706,10 @@ export function App() {
           />
         ) : page === "participate" && playerLoading ? (
           <section className="panel">
-            <p className="hint">Загрузка ваших прогнозов...</p>
+            <div className="loading-container">
+              <div className="spinner" />
+              <p className="loading-text">Загрузка ваших прогнозов...</p>
+            </div>
           </section>
         ) : page === "participate" && !user ? (
           <section className="panel">
