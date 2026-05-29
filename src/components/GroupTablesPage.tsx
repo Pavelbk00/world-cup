@@ -288,6 +288,17 @@ interface GroupTablesPageProps {
   matches: MatchResultState[];
   selectedPlayerId: string | null;
   onPlayerSelect: (id: string | null) => void;
+  /** Логин текущего пользователя (для определения прав доступа) */
+  currentUserLogin?: string;
+}
+
+/** Проверяет, завершён ли групповой этап (последний матч wc-072 имеет результат) */
+function isGroupStageFinished(matches: MatchResultState[]): boolean {
+  const lastGroupMatch = matches.find((m) => m.def.id === "wc-072");
+  if (!lastGroupMatch) return false;
+  const h = parseInt(lastGroupMatch.homeInput, 10);
+  const a = parseInt(lastGroupMatch.awayInput, 10);
+  return !isNaN(h) && !isNaN(a);
 }
 
 export function GroupTablesPage({
@@ -296,7 +307,10 @@ export function GroupTablesPage({
   matches,
   selectedPlayerId,
   onPlayerSelect,
+  currentUserLogin,
 }: GroupTablesPageProps) {
+  const groupStageDone = isGroupStageFinished(matches);
+  const isOwner = selectedPlayer?.login === currentUserLogin;
   const actualTables = buildActualGroupTables(matches);
   const groupPoints = selectedPlayer
     ? computeGroupPoints(selectedPlayer, actualTables)
@@ -349,6 +363,10 @@ export function GroupTablesPage({
         <p className="hint" style={{ textAlign: "center", marginTop: "2rem" }}>
           Выберите игрока, чтобы увидеть таблицы групп по его прогнозам.
         </p>
+      ) : !isOwner && !groupStageDone ? (
+        <div style={{ textAlign: "center", marginTop: "2rem" }}>
+          <p className="hint">🔒 Таблицы групп по прогнозам игрока {selectedPlayer.name} будут доступны после окончания группового этапа турнира.</p>
+        </div>
       ) : (
         <>
           <div className="group-tables-grid">

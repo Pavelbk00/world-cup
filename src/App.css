@@ -1961,6 +1961,14 @@ code.inline {
   margin: 0;
 }
 
+.privacy-notice {
+  color: #e67e22;
+  font-size: 0.85rem;
+  margin-top: 0.4rem;
+  margin-bottom: 0;
+  font-style: italic;
+}
+
 /* Server offline placeholder */
 .server-offline-panel {
   max-width: 480px;

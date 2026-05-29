@@ -140,7 +140,29 @@ export function App() {
   const [user, setUser] = useState<User | null>(() => getCurrentUser());
 
   const handleLoginSuccess = () => {
-    setUser(getCurrentUser());
+    const newUser = getCurrentUser();
+    setUser(newUser);
+    // Перезагружаем игроков с учётом авторизации (сервер фильтрует данные)
+    (async () => {
+      const loaded = await loadAllPlayers();
+      const hasRealData = loaded.some((p) => p.login);
+      if (!hasRealData) {
+        const fallback: PlayerState[] = usersData.users.map((u) => ({
+          id: newPlayerId(),
+          login: u.login,
+          name: u.nickname,
+          predictions: new Map<string, PlayerPrediction>(),
+          groupStandings: [] as GroupStandingPrediction[],
+          topScorer: null,
+          medalists: null,
+          rawJson: "",
+          parseError: null,
+        }));
+        setPlayers(fallback);
+      } else {
+        setPlayers(loaded);
+      }
+    })();
   };
 
   const handleLogout = () => {
@@ -633,6 +655,24 @@ export function App() {
               <span className="sidebar-label">{item.label}</span>
             </button>
           ))}
+          {!user && (
+            <button
+              key="login"
+              type="button"
+              className="sidebar-btn"
+              title="Войти"
+              onClick={() => setShowAuthModal(true)}
+            >
+              <span className="sidebar-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                  <polyline points="10 17 15 12 10 7" />
+                  <line x1="15" y1="12" x2="3" y2="12" />
+                </svg>
+              </span>
+              <span className="sidebar-label">Войти</span>
+            </button>
+          )}
           {user && (
             <button
               key="logout"
@@ -693,6 +733,7 @@ export function App() {
           <PlayerMatchesPage
             selectedPlayer={selectedPlayer}
             matches={matches}
+            currentUserLogin={user?.login}
           />
         ) : page === "halloffame" ? (
           <HallOfFamePage />
@@ -703,6 +744,7 @@ export function App() {
             matches={matches}
             selectedPlayerId={selectedPlayerId}
             onPlayerSelect={setSelectedPlayerId}
+            currentUserLogin={user?.login}
           />
         ) : page === "participate" && playerLoading ? (
           <section className="panel">

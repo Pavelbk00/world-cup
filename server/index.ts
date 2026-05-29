@@ -106,7 +106,9 @@ app.get("/api/results", async (_req, res) => {
 });
 
 // GET /api/players — list all players from users.json with their saved data
-app.get("/api/players", async (_req, res) => {
+app.get("/api/players", async (req, res) => {
+  const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
+  const hasResult = await getMatchResultsMap();
   const results: unknown[] = [];
 
   for (const u of registeredUsers) {
@@ -116,7 +118,12 @@ app.get("/api/players", async (_req, res) => {
       const content = await fs.readFile(filePath, "utf-8");
       const data = JSON.parse(content);
       if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-        results.push(data);
+        // Если запросивший пользователь не является владельцем — фильтруем
+        if (!requesterLogin || requesterLogin !== login) {
+          results.push(filterPlayerForNonOwner(data as Record<string, unknown>, hasResult));
+        } else {
+          results.push(data);
+        }
       }
     } catch {
       // Файла нет — добавляем пустой объект для этого пользователя
@@ -150,13 +157,23 @@ app.get("/api/players/:login", async (req, res) => {
     return;
   }
 
+  // Проверяем, является ли запросивший пользователь владельцем
+  const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
+  const isOwner = requesterLogin === login;
+
   try {
     const content = await fs.readFile(
       path.join(DATA_DIR, `${login}.json`),
       "utf-8",
     );
     const data = JSON.parse(content);
-    res.json(data);
+    // Если не владелец — фильтруем данные
+    if (!isOwner) {
+      const hasResult = await getMatchResultsMap();
+      res.json(filterPlayerForNonOwner(data as Record<string, unknown>, hasResult));
+    } else {
+      res.json(data);
+    }
   } catch {
     // Файла нет — возвращаем пустые данные
     res.json({
@@ -293,6 +310,59 @@ app.post("/api/players/save", async (req, res) => {
     res.status(500).json({ error: "Failed to save" });
   }
 });
+
+/** Загружает результаты матчей и возвращает Map<matchId, hasResult> */
+async function getMatchResultsMap(): Promise<Map<string, boolean>> {
+  try {
+    const content = await fs.readFile(
+      path.join(DATA_DIR, "results.json"),
+      "utf-8",
+    );
+    const data = JSON.parse(content) as Array<{
+      matchId: string;
+      home: number | null;
+      away: number | null;
+    }>;
+    const map = new Map<string, boolean>();
+    for (const r of data) {
+      map.set(r.matchId, r.home !== null && r.away !== null);
+    }
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+/**
+ * Фильтрует данные игрока для не-владельца:
+ * — оставляет только прогнозы на матчи с результатами
+ * — скрывает topScorer/medalists до старта первого матча
+ * — скрывает groupStandings
+ */
+function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<string, boolean>): Record<string, unknown> {
+  const filtered = { ...data };
+
+  // Фильтруем прогнозы: оставляем только матчи с результатами
+  if (Array.isArray(filtered.predictions)) {
+    filtered.predictions = (filtered.predictions as Array<Record<string, unknown>>).filter(
+      (p) => {
+        const matchId = p.matchId as string | undefined;
+        return matchId && hasResult.get(matchId) === true;
+      },
+    );
+  }
+
+  // Скрываем topScorer и medalists до старта первого матча
+  if (!isFirstMatchStarted()) {
+    filtered.topScorer = null;
+    filtered.medalists = null;
+  }
+
+  // Скрываем groupStandings для не-владельцев
+  filtered.groupStandings = [];
+
+  return filtered;
+}
 
 app.listen(3001, '127.0.0.1', () => {
   console.log(`Server running on http://localhost:3001`);

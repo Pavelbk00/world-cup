@@ -20,12 +20,17 @@ function matchDateTimeToMs(dateStr: string, timeStr: string): number {
 interface PlayerMatchesPageProps {
   selectedPlayer: PlayerState;
   matches: MatchResultState[];
+  /** Логин текущего пользователя (для определения прав доступа) */
+  currentUserLogin?: string;
 }
 
 export function PlayerMatchesPage({
   selectedPlayer,
   matches,
+  currentUserLogin,
 }: PlayerMatchesPageProps) {
+  const isOwner = selectedPlayer.login === currentUserLogin;
+
   const playerMatches: PlayerMatchRow[] = useMemo(() => {
     const rows = matches.map((m) => {
       const pred = selectedPlayer.predictions.get(m.def.id);
@@ -52,6 +57,11 @@ export function PlayerMatchesPage({
     <section className="panel player-matches-section">
       <div className="panel-head">
         <h2>Прогнозы: {selectedPlayer.name}</h2>
+        {!isOwner && (
+          <p className="hint privacy-notice">
+            🔒 Прогнозы на матчи без результата скрыты
+          </p>
+        )}
       </div>
       <p className="hint player-matches-summary">
         Сумма очков по матчам: <strong>{playerTotalPoints}</strong>
@@ -81,7 +91,11 @@ export function PlayerMatchesPage({
                   </div>
                 </td>
                 <td className="num">
-                  {pred ? `${pred.home}:${pred.away}` : "—"}
+                  {pred
+                    ? `${pred.home}:${pred.away}`
+                    : !isOwner && !actual
+                      ? "🔒"
+                      : "—"}
                 </td>
                 <td className="num">
                   {actual

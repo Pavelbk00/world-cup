@@ -1,8 +1,18 @@
 import type { PlayerState, PlayerPrediction } from "../types";
 import { DEFAULT_MATCHES } from "../matches";
 import { newPlayerId, emptyPlayers, PLAYER_SLOTS } from "./persistence";
+import { getCurrentUser } from "../auth";
 
 const API_BASE = "/api";
+
+/** Возвращает заголовки с логином текущего пользователя (если авторизован) */
+function authHeaders(): Record<string, string> {
+  const user = getCurrentUser();
+  if (user?.login) {
+    return { "X-User-Login": user.login };
+  }
+  return {};
+}
 
 export interface ExportShape {
   login: string;
@@ -71,7 +81,9 @@ function exportShapeToPlayerState(data: ExportShape): PlayerState {
 /** Load a single player by login. */
 export async function loadPlayerFile(login: string): Promise<PlayerState | null> {
   try {
-    const res = await fetch(`${API_BASE}/players/${encodeURIComponent(login)}`);
+    const res = await fetch(`${API_BASE}/players/${encodeURIComponent(login)}`, {
+      headers: authHeaders(),
+    });
     if (!res.ok) return null;
     const data = (await res.json()) as ExportShape;
     return exportShapeToPlayerState(data);
@@ -83,7 +95,9 @@ export async function loadPlayerFile(login: string): Promise<PlayerState | null>
 /** Load all saved players from the server. */
 export async function loadAllPlayers(): Promise<PlayerState[]> {
   try {
-    const res = await fetch(`${API_BASE}/players`);
+    const res = await fetch(`${API_BASE}/players`, {
+      headers: authHeaders(),
+    });
     if (!res.ok) return emptyPlayers();
     const list = (await res.json()) as ExportShape[];
     const players = list.map(exportShapeToPlayerState);
