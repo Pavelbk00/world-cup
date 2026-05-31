@@ -1,584 +1,296 @@
 {
   "player": "Пашок",
   "login": "pavel",
-  "predictions": [
-    {
-      "matchId": "wc-001",
-      "groupName": "Группа A",
-      "matchDateTime": "11.06.2026 22:00",
-      "matchText": "Мексика - ЮАР",
+  "predictions": {
+    "wc-001": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-002",
-      "groupName": "Группа A",
-      "matchDateTime": "12.06.2026 05:00",
-      "matchText": "Южная Корея - Чехия",
+    "wc-002": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-003",
-      "groupName": "Группа A",
-      "matchDateTime": "19.06.2026 19:00",
-      "matchText": "Чехия - ЮАР",
+    "wc-003": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-004",
-      "groupName": "Группа A",
-      "matchDateTime": "19.06.2026 04:00",
-      "matchText": "Мексика - Южная Корея",
+    "wc-004": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-005",
-      "groupName": "Группа A",
-      "matchDateTime": "25.06.2026 04:00",
-      "matchText": "Чехия - Мексика",
+    "wc-005": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-006",
-      "groupName": "Группа A",
-      "matchDateTime": "25.06.2026 04:00",
-      "matchText": "ЮАР - Южная Корея",
+    "wc-006": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-007",
-      "groupName": "Группа B",
-      "matchDateTime": "12.06.2026 22:00",
-      "matchText": "Канада - Босния",
+    "wc-007": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-008",
-      "groupName": "Группа B",
-      "matchDateTime": "13.06.2026 22:00",
-      "matchText": "Катар - Швейцария",
+    "wc-008": {
       "home": 0,
       "away": 4
     },
-    {
-      "matchId": "wc-009",
-      "groupName": "Группа B",
-      "matchDateTime": "18.06.2026 22:00",
-      "matchText": "Швейцария - Босния",
+    "wc-009": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-010",
-      "groupName": "Группа B",
-      "matchDateTime": "19.06.2026 01:00",
-      "matchText": "Канада - Катар",
+    "wc-010": {
       "home": 3,
       "away": 0
     },
-    {
-      "matchId": "wc-011",
-      "groupName": "Группа B",
-      "matchDateTime": "24.06.2026 22:00",
-      "matchText": "Швейцария - Канада",
+    "wc-011": {
       "home": 2,
       "away": 1
     },
-    {
-      "matchId": "wc-012",
-      "groupName": "Группа B",
-      "matchDateTime": "24.06.2026 22:00",
-      "matchText": "Босния - Катар",
+    "wc-012": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-013",
-      "groupName": "Группа C",
-      "matchDateTime": "14.06.2026 01:00",
-      "matchText": "Бразилия - Марокко",
+    "wc-013": {
       "home": 2,
       "away": 1
     },
-    {
-      "matchId": "wc-014",
-      "groupName": "Группа C",
-      "matchDateTime": "14.06.2026 04:00",
-      "matchText": "Гаити - Шотландия",
+    "wc-014": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-015",
-      "groupName": "Группа C",
-      "matchDateTime": "20.06.2026 01:00",
-      "matchText": "Шотландия - Марокко",
+    "wc-015": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-016",
-      "groupName": "Группа C",
-      "matchDateTime": "20.06.2026 04:00",
-      "matchText": "Бразилия - Гаити",
+    "wc-016": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-017",
-      "groupName": "Группа C",
-      "matchDateTime": "25.06.2026 01:00",
-      "matchText": "Шотландия - Бразилия",
+    "wc-017": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-018",
-      "groupName": "Группа C",
-      "matchDateTime": "25.06.2026 01:00",
-      "matchText": "Марокко - Гаити",
+    "wc-018": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-019",
-      "groupName": "Группа D",
-      "matchDateTime": "13.06.2026 04:00",
-      "matchText": "США - Парагвай",
+    "wc-019": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-020",
-      "groupName": "Группа D",
-      "matchDateTime": "14.06.2026 07:00",
-      "matchText": "Австралия - Турция",
+    "wc-020": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-021",
-      "groupName": "Группа D",
-      "matchDateTime": "19.06.2026 22:00",
-      "matchText": "США - Австралия",
+    "wc-021": {
       "home": 2,
       "away": 1
     },
-    {
-      "matchId": "wc-022",
-      "groupName": "Группа D",
-      "matchDateTime": "20.06.2026 07:00",
-      "matchText": "Турция - Парагвай",
+    "wc-022": {
       "home": 1,
       "away": 1
     },
-    {
-      "matchId": "wc-023",
-      "groupName": "Группа D",
-      "matchDateTime": "26.06.2026 05:00",
-      "matchText": "Турция - США",
+    "wc-023": {
       "home": 1,
       "away": 2
     },
-    {
-      "matchId": "wc-024",
-      "groupName": "Группа D",
-      "matchDateTime": "26.06.2026 05:00",
-      "matchText": "Парагвай - Австралия",
+    "wc-024": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-025",
-      "groupName": "Группа E",
-      "matchDateTime": "14.06.2026 23:00",
-      "matchText": "Нидерланды - Япония",
+    "wc-025": {
       "home": 3,
       "away": 0
     },
-    {
-      "matchId": "wc-026",
-      "groupName": "Группа E",
-      "matchDateTime": "15.06.2026 05:00",
-      "matchText": "Швеция - Тунис",
+    "wc-026": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-027",
-      "groupName": "Группа E",
-      "matchDateTime": "20.06.2026 20:00",
-      "matchText": "Нидерланды - Швеция",
+    "wc-027": {
       "home": 2,
       "away": 2
     },
-    {
-      "matchId": "wc-028",
-      "groupName": "Группа E",
-      "matchDateTime": "21.06.2026 07:00",
-      "matchText": "Тунис - Япония",
+    "wc-028": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-029",
-      "groupName": "Группа E",
-      "matchDateTime": "26.06.2026 02:00",
-      "matchText": "Япония - Швеция",
+    "wc-029": {
       "home": 1,
       "away": 2
     },
-    {
-      "matchId": "wc-030",
-      "groupName": "Группа E",
-      "matchDateTime": "26.06.2026 02:00",
-      "matchText": "Тунис - Нидерланды",
+    "wc-030": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-031",
-      "groupName": "Группа F",
-      "matchDateTime": "14.06.2026 20:00",
-      "matchText": "Германия - Кюрасао",
+    "wc-031": {
       "home": 7,
       "away": 0
     },
-    {
-      "matchId": "wc-032",
-      "groupName": "Группа F",
-      "matchDateTime": "15.06.2026 02:00",
-      "matchText": "Кот-д’Ивуар - Эквадор",
+    "wc-032": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-033",
-      "groupName": "Группа F",
-      "matchDateTime": "20.06.2026 23:00",
-      "matchText": "Германия - Кот-д’Ивуар",
+    "wc-033": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-034",
-      "groupName": "Группа F",
-      "matchDateTime": "21.06.2026 03:00",
-      "matchText": "Эквадор - Кюрасао",
+    "wc-034": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-035",
-      "groupName": "Группа F",
-      "matchDateTime": "25.06.2026 23:00",
-      "matchText": "Кюрасао - Кот-д’Ивуар",
+    "wc-035": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-036",
-      "groupName": "Группа F",
-      "matchDateTime": "25.06.2026 23:00",
-      "matchText": "Эквадор - Германия",
+    "wc-036": {
       "home": 0,
       "away": 3
     },
-    {
-      "matchId": "wc-037",
-      "groupName": "Группа G",
-      "matchDateTime": "15.06.2026 19:00",
-      "matchText": "Испания - Кабо-Верде",
+    "wc-037": {
       "home": 9,
       "away": 0
     },
-    {
-      "matchId": "wc-038",
-      "groupName": "Группа G",
-      "matchDateTime": "16.06.2026 01:00",
-      "matchText": "Саудовская Аравия - Уругвай",
+    "wc-038": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-039",
-      "groupName": "Группа G",
-      "matchDateTime": "21.06.2026 19:00",
-      "matchText": "Испания - Саудовская Аравия",
+    "wc-039": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-040",
-      "groupName": "Группа G",
-      "matchDateTime": "22.06.2026 01:00",
-      "matchText": "Уругвай - Кабо-Верде",
+    "wc-040": {
       "home": 3,
       "away": 0
     },
-    {
-      "matchId": "wc-041",
-      "groupName": "Группа G",
-      "matchDateTime": "27.06.2026 03:00",
-      "matchText": "Кабо-Верде - Саудовская Аравия",
+    "wc-041": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-042",
-      "groupName": "Группа G",
-      "matchDateTime": "27.06.2026 03:00",
-      "matchText": "Уругвай - Испания",
+    "wc-042": {
       "home": 1,
       "away": 3
     },
-    {
-      "matchId": "wc-043",
-      "groupName": "Группа H",
-      "matchDateTime": "15.06.2026 22:00",
-      "matchText": "Бельгия - Египет",
+    "wc-043": {
       "home": 1,
       "away": 1
     },
-    {
-      "matchId": "wc-044",
-      "groupName": "Группа H",
-      "matchDateTime": "16.06.2026 04:00",
-      "matchText": "Иран - Новая Зеландия",
+    "wc-044": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-045",
-      "groupName": "Группа H",
-      "matchDateTime": "21.06.2026 22:00",
-      "matchText": "Бельгия - Иран",
+    "wc-045": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-046",
-      "groupName": "Группа H",
-      "matchDateTime": "22.06.2026 04:00",
-      "matchText": "Новая Зеландия - Египет",
+    "wc-046": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-047",
-      "groupName": "Группа H",
-      "matchDateTime": "27.06.2026 06:00",
-      "matchText": "Египет - Иран",
+    "wc-047": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-048",
-      "groupName": "Группа H",
-      "matchDateTime": "27.06.2026 06:00",
-      "matchText": "Новая Зеландия - Бельгия",
+    "wc-048": {
       "home": 0,
       "away": 3
     },
-    {
-      "matchId": "wc-049",
-      "groupName": "Группа I",
-      "matchDateTime": "16.06.2026 22:00",
-      "matchText": "Франция - Сенегал",
+    "wc-049": {
       "home": 3,
       "away": 1
     },
-    {
-      "matchId": "wc-050",
-      "groupName": "Группа I",
-      "matchDateTime": "17.06.2026 01:00",
-      "matchText": "Ирак - Норвегия",
+    "wc-050": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-051",
-      "groupName": "Группа I",
-      "matchDateTime": "23.06.2026 00:00",
-      "matchText": "Франция - Ирак",
+    "wc-051": {
       "home": 5,
       "away": 0
     },
-    {
-      "matchId": "wc-052",
-      "groupName": "Группа I",
-      "matchDateTime": "23.06.2026 03:00",
-      "matchText": "Норвегия - Сенегал",
+    "wc-052": {
       "home": 1,
       "away": 2
     },
-    {
-      "matchId": "wc-053",
-      "groupName": "Группа I",
-      "matchDateTime": "26.06.2026 22:00",
-      "matchText": "Норвегия - Франция",
+    "wc-053": {
       "home": 0,
       "away": 3
     },
-    {
-      "matchId": "wc-054",
-      "groupName": "Группа I",
-      "matchDateTime": "26.06.2026 22:00",
-      "matchText": "Сенегал - Ирак",
+    "wc-054": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-055",
-      "groupName": "Группа J",
-      "matchDateTime": "17.06.2026 04:00",
-      "matchText": "Аргентина - Алжир",
+    "wc-055": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-056",
-      "groupName": "Группа J",
-      "matchDateTime": "17.06.2026 07:00",
-      "matchText": "Австрия - Иордания",
+    "wc-056": {
       "home": 1,
       "away": 0
     },
-    {
-      "matchId": "wc-057",
-      "groupName": "Группа J",
-      "matchDateTime": "22.06.2026 20:00",
-      "matchText": "Аргентина - Австрия",
+    "wc-057": {
       "home": 2,
       "away": 1
     },
-    {
-      "matchId": "wc-058",
-      "groupName": "Группа J",
-      "matchDateTime": "23.06.2026 06:00",
-      "matchText": "Иордания - Алжир",
+    "wc-058": {
       "home": 0,
       "away": 0
     },
-    {
-      "matchId": "wc-059",
-      "groupName": "Группа J",
-      "matchDateTime": "28.06.2026 05:00",
-      "matchText": "Алжир - Австрия",
+    "wc-059": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-060",
-      "groupName": "Группа J",
-      "matchDateTime": "28.06.2026 05:00",
-      "matchText": "Иордания - Аргентина",
+    "wc-060": {
       "home": 0,
       "away": 4
     },
-    {
-      "matchId": "wc-061",
-      "groupName": "Группа K",
-      "matchDateTime": "17.06.2026 23:00",
-      "matchText": "Англия - Хорватия",
+    "wc-061": {
       "home": 2,
       "away": 1
     },
-    {
-      "matchId": "wc-062",
-      "groupName": "Группа K",
-      "matchDateTime": "18.06.2026 02:00",
-      "matchText": "Гана - Панама",
+    "wc-062": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-063",
-      "groupName": "Группа K",
-      "matchDateTime": "23.06.2026 23:00",
-      "matchText": "Англия - Гана",
+    "wc-063": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-064",
-      "groupName": "Группа K",
-      "matchDateTime": "24.06.2026 02:00",
-      "matchText": "Панама - Хорватия",
+    "wc-064": {
       "home": 0,
       "away": 1
     },
-    {
-      "matchId": "wc-065",
-      "groupName": "Группа K",
-      "matchDateTime": "28.06.2026 00:00",
-      "matchText": "Панама - Англия",
+    "wc-065": {
       "home": 0,
       "away": 3
     },
-    {
-      "matchId": "wc-066",
-      "groupName": "Группа K",
-      "matchDateTime": "28.06.2026 00:00",
-      "matchText": "Хорватия - Гана",
+    "wc-066": {
       "home": 2,
       "away": 0
     },
-    {
-      "matchId": "wc-067",
-      "groupName": "Группа L",
-      "matchDateTime": "17.06.2026 20:00",
-      "matchText": "Португалия - ДР Конго",
+    "wc-067": {
       "home": 4,
       "away": 0
     },
-    {
-      "matchId": "wc-068",
-      "groupName": "Группа L",
-      "matchDateTime": "18.06.2026 05:00",
-      "matchText": "Узбекистан - Колумбия",
+    "wc-068": {
       "home": 0,
       "away": 2
     },
-    {
-      "matchId": "wc-069",
-      "groupName": "Группа L",
-      "matchDateTime": "23.06.2026 20:00",
-      "matchText": "Португалия - Узбекистан",
+    "wc-069": {
       "home": 3,
       "away": 0
     },
-    {
-      "matchId": "wc-070",
-      "groupName": "Группа L",
-      "matchDateTime": "24.06.2026 05:00",
-      "matchText": "Колумбия - ДР Конго",
+    "wc-070": {
       "home": 3,
       "away": 0
     },
-    {
-      "matchId": "wc-071",
-      "groupName": "Группа L",
-      "matchDateTime": "28.06.2026 02:30",
-      "matchText": "Колумбия - Португалия",
+    "wc-071": {
       "home": 1,
       "away": 3
     },
-    {
-      "matchId": "wc-072",
-      "groupName": "Группа L",
-      "matchDateTime": "28.06.2026 02:30",
-      "matchText": "ДР Конго - Узбекистан",
+    "wc-072": {
       "home": 0,
       "away": 0
     }
-  ],
+  },
   "groupStandings": [],
   "playoff": [],
   "topScorer": "Кейн",

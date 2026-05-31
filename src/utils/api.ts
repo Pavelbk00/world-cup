@@ -1,5 +1,4 @@
-import type { PlayerState, PlayerPrediction } from "../types";
-import { DEFAULT_MATCHES } from "../matches";
+import type { MatchId, PlayerState, PlayerPrediction } from "../types";
 import { newPlayerId, emptyPlayers, PLAYER_SLOTS } from "./persistence";
 import { getCurrentUser } from "../auth";
 
@@ -17,7 +16,7 @@ function authHeaders(): Record<string, string> {
 export interface ExportShape {
   login: string;
   player: string;
-  predictions: PlayerPrediction[];
+  predictions: Record<MatchId, PlayerPrediction>;
   groupStandings: PlayerState["groupStandings"];
   topScorer: PlayerState["topScorer"];
   medalists: PlayerState["medalists"];
@@ -27,22 +26,13 @@ export interface ExportShape {
 
 function buildExport(player: PlayerState, login: string): ExportShape {
   const name = player.name.trim();
-  const predictions: PlayerPrediction[] = [];
+  const predictions: Record<MatchId, PlayerPrediction> = {};
   for (const [matchId, score] of player.predictions) {
-    const def = DEFAULT_MATCHES.find((m) => m.id === matchId);
-    const pred: PlayerPrediction = {
-      matchId,
-      groupName: def?.phase,
-      matchDateTime: def ? `${def.date} ${def.time}` : undefined,
-      matchText: def ? `${def.homeTeam} - ${def.awayTeam}` : undefined,
-      home: score.home,
-      away: score.away,
-    };
+    const pred: PlayerPrediction = { home: score.home, away: score.away };
     if (score.winner) pred.winner = score.winner;
     if (score.method) pred.method = score.method;
-    predictions.push(pred);
+    predictions[matchId] = pred;
   }
-  predictions.sort((a, b) => (a.matchId ?? "").localeCompare(b.matchId ?? ""));
 
   return {
     login,
@@ -56,14 +46,16 @@ function buildExport(player: PlayerState, login: string): ExportShape {
 
 function exportShapeToPlayerState(data: ExportShape): PlayerState {
   const predsMap = new Map<string, PlayerPrediction>();
-  for (const p of data.predictions) {
-    const prediction: PlayerPrediction = {
-      home: p.home,
-      away: p.away,
-    };
-    if (p.winner) prediction.winner = p.winner;
-    if (p.method) prediction.method = p.method;
-    if (p.matchId) predsMap.set(p.matchId, prediction);
+  if (data.predictions && typeof data.predictions === "object") {
+    // Новый формат: хэш-таблица
+    for (const [matchId, pred] of Object.entries(data.predictions)) {
+      if (typeof pred === "object" && pred !== null) {
+        const p: PlayerPrediction = { home: pred.home, away: pred.away };
+        if (pred.winner) p.winner = pred.winner;
+        if (pred.method) p.method = pred.method;
+        predsMap.set(matchId, p);
+      }
+    }
   }
   return {
     id: newPlayerId(),
@@ -127,20 +119,18 @@ export async function savePlayer(player: PlayerState, login: string): Promise<bo
   }
 }
 
-export interface MatchResultJson {
-  matchId: string;
-  home: number;
-  away: number;
+export interface MatchResultMap {
+  [matchId: string]: { home: number | null; away: number | null };
 }
 
-/** Load match results from the server (data/results.json). */
-export async function loadMatchResults(): Promise<MatchResultJson[]> {
+/** Load match results from the server (data/results.json) as hash map. */
+export async function loadMatchResults(): Promise<MatchResultMap> {
   try {
     const res = await fetch(`${API_BASE}/results`);
-    if (!res.ok) return [];
-    return (await res.json()) as MatchResultJson[];
+    if (!res.ok) return {};
+    return (await res.json()) as MatchResultMap;
   } catch {
-    return [];
+    return {};
   }
 }
 

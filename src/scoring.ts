@@ -167,11 +167,10 @@ function scoreGroupStage(
 }
 
 function scorePlayoffBonus(player: PlayerState): number {
-  if (PLAYOFF_RESULTS.length === 0) return 0;
-  const actualByMatch = new Map(PLAYOFF_RESULTS.map((x) => [x.matchId, x]));
+  if (Object.keys(PLAYOFF_RESULTS).length === 0) return 0;
   let points = 0;
   for (const [matchId, pred] of player.predictions) {
-    const actual = actualByMatch.get(matchId);
+    const actual = PLAYOFF_RESULTS[matchId];
     if (!actual) continue;
     if (!pred.winner || !actual.winner || !actual.method) continue;
     if (normalizeName(pred.winner) !== normalizeName(actual.winner)) continue;

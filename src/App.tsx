@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
-import { DEFAULT_MATCHES } from "./matches";
+import { DEFAULT_MATCHES, DEFAULT_MATCHES_LIST } from "./matches";
 import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "./matchUtils";
 import { computeStandings } from "./scoring";
 import type {
+  MatchDef,
   MatchId,
   MatchResultState,
   MedalistsPrediction,
@@ -29,7 +30,7 @@ import {
 // Utils
 import { emptyPlayers, newPlayerId } from "./utils";
 import {
-  predictionsArrayFromDraft,
+  predictionsMapFromDraft,
   mergePlayerRawJson,
   PLAYER_SLOTS,
 } from "./parsePlayerJson";
@@ -40,7 +41,7 @@ const SLOT_MAP_KEY = "wc2026_login_slot";
 
 /** Дата и время первого матча турнира */
 const FIRST_MATCH = (() => {
-  const first = DEFAULT_MATCHES.find((m) => !m.isPlaceholder);
+  const first = DEFAULT_MATCHES_LIST.find((m) => !m.isPlaceholder);
   if (!first) return new Date(0);
   const [day, month, year] = first.date.split(".").map(Number);
   const [hours, minutes] = first.time.split(":").map(Number);
@@ -119,7 +120,7 @@ function emptyPlayer(): PlayerState {
 
 /** Преобразует карту прогнозов + winner/method в черновик счёта */
 function draftFromPredictionsMapShallow(
-  matches: typeof DEFAULT_MATCHES,
+  matches: MatchDef[],
   predictions: Map<MatchId, PlayerPrediction>,
 ): Record<MatchId, ScoreDraftEntry> {
   const r: Record<MatchId, ScoreDraftEntry> = {};
@@ -180,7 +181,7 @@ export function App() {
     protectedPages.includes(page);
 
   const [matches, setMatches] = useState<MatchResultState[]>(
-    DEFAULT_MATCHES.map((def) => ({
+    DEFAULT_MATCHES_LIST.map((def) => ({
       def,
       homeInput: "",
       awayInput: "",
@@ -227,19 +228,19 @@ export function App() {
     })();
   }, []);
 
-  // Load match results from data/results.json
+  // Load match results from data/results.json (хэш-таблица — O(1) lookup)
   useEffect(() => {
     (async () => {
       const results = await loadMatchResults();
-      if (results.length === 0) return;
+      if (Object.keys(results).length === 0) return;
       setMatches((prev) =>
         prev.map((m) => {
-          const matchResult = results.find((r) => r.matchId === m.def.id);
-          if (matchResult) {
+          const matchResult = results[m.def.id];
+          if (matchResult && (matchResult.home !== null || matchResult.away !== null)) {
             return {
               ...m,
-              homeInput: String(matchResult.home),
-              awayInput: String(matchResult.away),
+              homeInput: matchResult.home !== null ? String(matchResult.home) : "",
+              awayInput: matchResult.away !== null ? String(matchResult.away) : "",
             };
           }
           return m;
@@ -272,7 +273,7 @@ export function App() {
   const [currentPlayer, setCurrentPlayer] = useState<PlayerState>(emptyPlayer);
   const [scoreDraft, setScoreDraft] = useState<
     Record<MatchId, ScoreDraftEntry>
-  >(() => draftFromPredictionsMapShallow(DEFAULT_MATCHES, new Map()));
+  >(() => draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, new Map()));
 
   // Medalists and top scorer draft
   const [medalistsDraft, setMedalistsDraft] = useState<MedalistsPrediction>({
@@ -312,7 +313,7 @@ export function App() {
       if (currentPlayer.login !== cur.login || currentPlayer.predictions.size === 0) {
         setCurrentPlayer(players[slot]);
         setScoreDraft(
-          draftFromPredictionsMapShallow(DEFAULT_MATCHES, players[slot].predictions),
+          draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, players[slot].predictions),
         );
         setMedalistsDraft(
           players[slot].medalists ?? { gold: "", silver: "", bronze: "" },
@@ -337,7 +338,7 @@ export function App() {
       if (loaded) {
         setCurrentPlayer(loaded);
         setScoreDraft(
-          draftFromPredictionsMapShallow(DEFAULT_MATCHES, loaded.predictions),
+          draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, loaded.predictions),
         );
         setMedalistsDraft(
           loaded.medalists ?? { gold: "", silver: "", bronze: "" },
@@ -475,7 +476,7 @@ export function App() {
   ];
 
   const handleScoreChange = (matchId: string, home: string, away: string) => {
-    const matchDef = DEFAULT_MATCHES.find((m) => m.id === matchId);
+    const matchDef = DEFAULT_MATCHES[matchId];
     if (matchDef && (isMatchFinished(matchDef) || !isMatchPredictable(matchDef))) return;
     setScoreDraft((prev) => ({
       ...prev,
@@ -512,7 +513,7 @@ export function App() {
     if (!hasAnyScore) return;
 
     // Проверка: если в плей-офф указана ничья, должен быть выбран победитель и способ
-    const hasIncompletePlayoffDraws = DEFAULT_MATCHES
+    const hasIncompletePlayoffDraws = DEFAULT_MATCHES_LIST
       .filter((m) => isPlayoffPhase(m.phase) && isMatchPredictable(m) && !isMatchFinished(m))
       .some((m) => {
         const d = scoreDraft[m.id];
@@ -522,7 +523,7 @@ export function App() {
 
     // Собираем прогнозы из draft напрямую
     const predsMap = new Map<string, PlayerPrediction>();
-    for (const m of DEFAULT_MATCHES) {
+    for (const m of DEFAULT_MATCHES_LIST) {
       const d = scoreDraft[m.id];
       if (d && d.h !== "" && d.a !== "") {
         const pred: PlayerPrediction = { home: Number(d.h), away: Number(d.a) };
@@ -533,7 +534,7 @@ export function App() {
         predsMap.set(m.id, pred);
       }
     }
-    const arr = predictionsArrayFromDraft(DEFAULT_MATCHES, scoreDraft);
+    const predsRecord = predictionsMapFromDraft(DEFAULT_MATCHES_LIST, scoreDraft);
 
     const effectiveTopScorer = isFirstMatchStarted
       ? (currentPlayer.topScorer ?? "")
@@ -542,8 +543,8 @@ export function App() {
       ? (currentPlayer.medalists ?? { gold: "", silver: "", bronze: "" })
       : medalistsDraft;
 
-    // mergePlayerRawJson теперь принимает только predictionsArr (winner/method внутри)
-    const raw = mergePlayerRawJson(currentPlayer.rawJson, name, arr);
+    // mergePlayerRawJson теперь принимает хэш-таблицу (Record<MatchId, PlayerPrediction>)
+    const raw = mergePlayerRawJson(currentPlayer.rawJson, name, predsRecord);
     const updated: PlayerState = {
       id: currentPlayer.id,
       login: user.login,

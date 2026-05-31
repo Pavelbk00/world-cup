@@ -29,14 +29,6 @@ export interface Score {
 export type PlayoffWinMethod = "regular" | "extraTime" | "penalties";
 
 export interface PlayerPrediction {
-  /** Идентификатор матча (опционален, когда хранится в Map'е) */
-  matchId?: MatchId;
-  /** Название группы матча */
-  groupName?: string;
-  /** Дата и время матча */
-  matchDateTime?: string;
-  /** Русское наименование матча для удобства заполнения JSON */
-  matchText?: string;
   home: number;
   away: number;
   /** Для ничейных матчей плей-офф — прогнозируемый победитель */
@@ -59,10 +51,10 @@ export interface MedalistsPrediction {
   bronze: string;
 }
 
-/** Формат JSON одного игрока */
+/** Формат JSON одного игрока (predictions — хэш-таблица matchId → счёт) */
 export interface PlayerJson {
   player: string;
-  predictions: PlayerPrediction[];
+  predictions: Record<MatchId, PlayerPrediction>;
   groupStandings?: GroupStandingPrediction[];
   topScorer?: string;
   medalists?: MedalistsPrediction;

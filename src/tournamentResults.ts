@@ -1,7 +1,7 @@
 import type { MedalistsPrediction, PlayerPrediction } from "./types";
 
-/** Фактические результаты матчей плей-офф для бонуса за проход. */
-export const PLAYOFF_RESULTS: PlayerPrediction[] = [];
+/** Фактические результаты матчей плей-офф для бонуса за проход (хэш-таблица matchId -> результат). */
+export const PLAYOFF_RESULTS: Record<string, PlayerPrediction & { winner: string; method: "regular" | "extraTime" | "penalties" }> = {};
 
 /** Официальный обладатель "Золотой бутсы" ФИФА. */
 export const GOLDEN_BOOT_WINNER: string | null = null;

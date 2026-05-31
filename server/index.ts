@@ -7,9 +7,29 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");
 const USERS_PATH = path.join(__dirname, "..", "src", "users.json");
+const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
 
 // Ensure data dir exists
 await fs.mkdir(DATA_DIR, { recursive: true });
+
+// ---- Загрузка каталога матчей (для валидации по matchId) ----
+interface MatchDef {
+  id: string;
+  date: string;
+  time: string;
+  homeTeam: string;
+  awayTeam: string;
+  phase: string;
+  isPlaceholder?: boolean;
+}
+
+let matchesCatalog: Record<string, MatchDef> = {};
+try {
+  const matchesContent = await fs.readFile(MATCHES_PATH, "utf-8");
+  matchesCatalog = JSON.parse(matchesContent);
+} catch {
+  console.warn("Could not read data/matches.json, match time validation disabled");
+}
 
 // ---- Загрузка users.json и создание файлов для каждого пользователя ----
 interface UserEntry {
@@ -38,11 +58,11 @@ for (const u of registeredUsers) {
   try {
     await fs.access(filePath);
   } catch {
-    // Файла нет — создаём с пустыми данными
+    // Файла нет — создаём с пустыми данными (predictions — хэш-таблица)
     const initial = {
       player: u.nickname,
       login: u.login,
-      predictions: [],
+      predictions: {},
       groupStandings: [],
       playoff: [],
       topScorer: null,
@@ -62,27 +82,25 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
-function fileNameSlug(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-zа-яё0-9-]/gi, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 /** Парсит строку вида "DD.MM.YYYY HH:MM" в Date | null */
-function parseMatchDateTime(dt: string): Date | null {
-  const parts = dt.split(" ");
-  if (parts.length !== 2) return null;
-  const [day, month, year] = parts[0].split(".").map(Number);
-  const [hours, minutes] = parts[1].split(":").map(Number);
+function parseMatchDateTime(date: string, time: string): Date | null {
+  const [day, month, year] = date.split(".").map(Number);
+  const [hours, minutes] = time.split(":").map(Number);
   if (
     isNaN(day) || isNaN(month) || isNaN(year) ||
     isNaN(hours) || isNaN(minutes)
   ) return null;
   return new Date(year, month - 1, day, hours, minutes);
+}
+
+/** Проверяет, начался ли матч по matchId (из каталога матчей) */
+function hasMatchStarted(matchId: string): boolean {
+  const match = matchesCatalog[matchId];
+  if (!match) return true; // Неизвестный матч — считаем начавшимся (безопасно)
+  if (match.isPlaceholder) return false; // Плейсхолдеры не блокируются
+  const matchTime = parseMatchDateTime(match.date, match.time);
+  if (!matchTime) return true;
+  return Date.now() >= matchTime.getTime();
 }
 
 /** Дата и время первого матча турнира (блокировка выбора призёров и бомбардира) */
@@ -91,18 +109,35 @@ function isFirstMatchStarted(): boolean {
   return Date.now() >= FIRST_MATCH_TIME;
 }
 
-// GET /api/results — read match results from results.json
-app.get("/api/results", async (_req, res) => {
+// Кэш результатов матчей (хэш-таблица matchId -> {home, away})
+let resultsCache: Record<string, { home: number | null; away: number | null }> | null = null;
+let resultsCacheTime = 0;
+const RESULTS_CACHE_TTL = 5_000; // 5 секунд
+
+async function loadResults(): Promise<Record<string, { home: number | null; away: number | null }>> {
+  const now = Date.now();
+  if (resultsCache && now - resultsCacheTime < RESULTS_CACHE_TTL) {
+    return resultsCache;
+  }
   try {
     const content = await fs.readFile(
       path.join(DATA_DIR, "results.json"),
       "utf-8",
     );
-    const data = JSON.parse(content);
-    res.json(data);
+    resultsCache = JSON.parse(content);
+    resultsCacheTime = now;
+    return resultsCache!;
   } catch {
-    res.json([]);
+    resultsCache = {};
+    resultsCacheTime = now;
+    return {};
   }
+}
+
+// GET /api/results — read match results from results.json (хэш-таблица)
+app.get("/api/results", async (_req, res) => {
+  const data = await loadResults();
+  res.json(data);
 });
 
 // GET /api/players — list all players from users.json with their saved data
@@ -118,11 +153,13 @@ app.get("/api/players", async (req, res) => {
       const content = await fs.readFile(filePath, "utf-8");
       const data = JSON.parse(content);
       if (typeof data === "object" && data !== null && !Array.isArray(data)) {
+        // Нормализуем predictions к хэш-таблице
+        const normalized = normalizePredictions(data as Record<string, unknown>);
         // Если запросивший пользователь не является владельцем — фильтруем
         if (!requesterLogin || requesterLogin !== login) {
-          results.push(filterPlayerForNonOwner(data as Record<string, unknown>, hasResult));
+          results.push(filterPlayerForNonOwner(normalized, hasResult));
         } else {
-          results.push(data);
+          results.push(normalized);
         }
       }
     } catch {
@@ -130,7 +167,7 @@ app.get("/api/players", async (req, res) => {
       results.push({
         player: u.nickname,
         login: u.login,
-        predictions: [],
+        predictions: {},
         groupStandings: [],
         playoff: [],
         topScorer: null,
@@ -167,19 +204,21 @@ app.get("/api/players/:login", async (req, res) => {
       "utf-8",
     );
     const data = JSON.parse(content);
+    // Нормализуем predictions к хэш-таблице
+    const normalized = normalizePredictions(data as Record<string, unknown>);
     // Если не владелец — фильтруем данные
     if (!isOwner) {
       const hasResult = await getMatchResultsMap();
-      res.json(filterPlayerForNonOwner(data as Record<string, unknown>, hasResult));
+      res.json(filterPlayerForNonOwner(normalized, hasResult));
     } else {
-      res.json(data);
+      res.json(normalized);
     }
   } catch {
     // Файла нет — возвращаем пустые данные
     res.json({
       player: user.nickname,
       login: user.login,
-      predictions: [],
+      predictions: {},
       groupStandings: [],
       playoff: [],
       topScorer: null,
@@ -193,14 +232,7 @@ app.post("/api/players/save", async (req, res) => {
   const body = req.body as {
     login: string;
     player: string;
-    predictions: Array<{
-      matchId: string;
-      home: number;
-      away: number;
-      matchDateTime?: string;
-      matchText?: string;
-      groupName?: string;
-    }>;
+    predictions: Record<string, { home: number; away: number; winner?: string; method?: string }>;
     groupStandings?: unknown[];
     playoff?: unknown[];
     topScorer?: unknown;
@@ -234,15 +266,21 @@ app.post("/api/players/save", async (req, res) => {
   }
 
   // Собираем существующие прогнозы по matchId для начавшихся матчей
+  // Поддержка старого формата (массив) и нового (хэш-таблица)
   const existingPredsMap = new Map<string, { home: number; away: number }>();
-  if (existingData && Array.isArray(existingData.predictions)) {
-    for (const p of existingData.predictions as Array<{
-      matchId: string;
-      home: number;
-      away: number;
-    }>) {
-      if (typeof p.home === "number" && typeof p.away === "number") {
-        existingPredsMap.set(p.matchId, { home: p.home, away: p.away });
+  if (existingData) {
+    const preds = existingData.predictions;
+    if (Array.isArray(preds)) {
+      for (const p of preds as Array<{ matchId: string; home: number; away: number }>) {
+        if (typeof p.home === "number" && typeof p.away === "number" && p.matchId) {
+          existingPredsMap.set(p.matchId, { home: p.home, away: p.away });
+        }
+      }
+    } else if (preds && typeof preds === "object") {
+      for (const [matchId, val] of Object.entries(preds as Record<string, { home: number; away: number }>)) {
+        if (typeof val?.home === "number" && typeof val?.away === "number") {
+          existingPredsMap.set(matchId, { home: val.home, away: val.away });
+        }
       }
     }
   }
@@ -257,33 +295,31 @@ app.post("/api/players/save", async (req, res) => {
     medalists = existingData?.medalists ?? null;
   }
 
-  // Валидируем прогнозы: если matchDateTime уже прошёл, оставляем существующий
-  const validatedPredictions: Array<{
-    matchId: string;
-    home: number;
-    away: number;
-    matchDateTime?: string;
-    matchText?: string;
-    groupName?: string;
-  }> = [];
+  // Валидируем прогнозы: если матч уже начался, оставляем существующий
+  const validatedPredictions: Record<string, { home: number; away: number; winner?: string; method?: string }> = {};
 
-  for (const p of body.predictions ?? []) {
-    const matchTime = p.matchDateTime ? parseMatchDateTime(p.matchDateTime) : null;
+  if (body.predictions && typeof body.predictions === "object" && !Array.isArray(body.predictions)) {
+    for (const [matchId, pred] of Object.entries(body.predictions)) {
+      if (typeof pred !== "object" || pred === null) continue;
+      if (typeof pred.home !== "number" || typeof pred.away !== "number") continue;
 
-    if (matchTime && Date.now() >= matchTime.getTime()) {
-      // Матч уже начался или завершился — берём существующий прогноз (или 0:0)
-      const existing = existingPredsMap.get(p.matchId);
-      validatedPredictions.push({
-        matchId: p.matchId,
-        home: existing?.home ?? 0,
-        away: existing?.away ?? 0,
-        matchDateTime: p.matchDateTime,
-        matchText: p.matchText,
-        groupName: p.groupName,
-      });
-    } else {
-      // Матч ещё не начался (или matchDateTime не указан) — используем как есть
-      validatedPredictions.push(p);
+      if (hasMatchStarted(matchId)) {
+        // Матч уже начался — берём существующий прогноз (или 0:0)
+        const existing = existingPredsMap.get(matchId);
+        validatedPredictions[matchId] = {
+          home: existing?.home ?? 0,
+          away: existing?.away ?? 0,
+        };
+      } else {
+        // Матч ещё не начался — используем как есть
+        const validated: { home: number; away: number; winner?: string; method?: string } = {
+          home: pred.home,
+          away: pred.away,
+        };
+        if (pred.winner && typeof pred.winner === "string") validated.winner = pred.winner;
+        if (pred.method && typeof pred.method === "string") validated.method = pred.method;
+        validatedPredictions[matchId] = validated;
+      }
     }
   }
 
@@ -311,26 +347,33 @@ app.post("/api/players/save", async (req, res) => {
   }
 });
 
-/** Загружает результаты матчей и возвращает Map<matchId, hasResult> */
+/** Загружает результаты матчей и возвращает Map<matchId, hasResult> (из кэша) */
 async function getMatchResultsMap(): Promise<Map<string, boolean>> {
-  try {
-    const content = await fs.readFile(
-      path.join(DATA_DIR, "results.json"),
-      "utf-8",
-    );
-    const data = JSON.parse(content) as Array<{
-      matchId: string;
-      home: number | null;
-      away: number | null;
-    }>;
-    const map = new Map<string, boolean>();
-    for (const r of data) {
-      map.set(r.matchId, r.home !== null && r.away !== null);
-    }
-    return map;
-  } catch {
-    return new Map();
+  const data = await loadResults();
+  const map = new Map<string, boolean>();
+  for (const [matchId, result] of Object.entries(data)) {
+    map.set(matchId, result.home !== null && result.away !== null);
   }
+  return map;
+}
+
+/** Нормализует predictions к хэш-таблице (если старый формат — массив) */
+function normalizePredictions(data: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...data };
+  if (Array.isArray(result.predictions)) {
+    const map: Record<string, unknown> = {};
+    for (const p of result.predictions as Array<Record<string, unknown>>) {
+      const matchId = p.matchId as string | undefined;
+      if (matchId) {
+        const entry: Record<string, unknown> = { home: p.home, away: p.away };
+        if (p.winner) entry.winner = p.winner;
+        if (p.method) entry.method = p.method;
+        map[matchId] = entry;
+      }
+    }
+    result.predictions = map;
+  }
+  return result;
 }
 
 /**
@@ -343,13 +386,14 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
   const filtered = { ...data };
 
   // Фильтруем прогнозы: оставляем только матчи с результатами
-  if (Array.isArray(filtered.predictions)) {
-    filtered.predictions = (filtered.predictions as Array<Record<string, unknown>>).filter(
-      (p) => {
-        const matchId = p.matchId as string | undefined;
-        return matchId && hasResult.get(matchId) === true;
-      },
-    );
+  if (filtered.predictions && typeof filtered.predictions === "object" && !Array.isArray(filtered.predictions)) {
+    const filteredPreds: Record<string, unknown> = {};
+    for (const [matchId, pred] of Object.entries(filtered.predictions as Record<string, unknown>)) {
+      if (hasResult.get(matchId) === true) {
+        filteredPreds[matchId] = pred;
+      }
+    }
+    filtered.predictions = filteredPreds;
   }
 
   // Скрываем topScorer и medalists до старта первого матча

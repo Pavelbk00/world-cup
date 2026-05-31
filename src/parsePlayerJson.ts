@@ -39,31 +39,55 @@ export function parsePlayerObject(
   }
   const name = str(data.player, "player");
   const predsRaw = data.predictions;
-  if (!Array.isArray(predsRaw)) {
-    throw new Error("predictions должен быть массивом");
-  }
   const predictions = new Map<MatchId, PlayerPrediction>();
-  for (let i = 0; i < predsRaw.length; i++) {
-    const p = predsRaw[i];
-    const base = `predictions[${i}]`;
-    if (!isRecord(p)) {
-      throw new Error(`${base}: объект прогноза`);
+
+  // Поддержка двух форматов: хэш-таблица (новый) и массив (старый)
+  if (isRecord(predsRaw)) {
+    for (const [matchId, val] of Object.entries(predsRaw)) {
+      const base = `predictions.${matchId}`;
+      if (!validIds.has(matchId)) {
+        throw new Error(`${base}: неизвестный id «${matchId}»`);
+      }
+      if (!isRecord(val)) {
+        throw new Error(`${base}: объект прогноза`);
+      }
+      const pred: PlayerPrediction = {
+        home: num(val.home, `${base}.home`),
+        away: num(val.away, `${base}.away`),
+      };
+      if (typeof val.winner === "string" && val.winner.trim()) {
+        pred.winner = val.winner.trim();
+      }
+      if (typeof val.method === "string" && (val.method === "regular" || val.method === "extraTime" || val.method === "penalties")) {
+        pred.method = val.method;
+      }
+      predictions.set(matchId, pred);
     }
-    const matchId = str(p.matchId, `${base}.matchId`);
-    if (!validIds.has(matchId)) {
-      throw new Error(`${base}.matchId: неизвестный id «${matchId}»`);
+  } else if (Array.isArray(predsRaw)) {
+    for (let i = 0; i < predsRaw.length; i++) {
+      const p = predsRaw[i];
+      const base = `predictions[${i}]`;
+      if (!isRecord(p)) {
+        throw new Error(`${base}: объект прогноза`);
+      }
+      const matchId = str(p.matchId, `${base}.matchId`);
+      if (!validIds.has(matchId)) {
+        throw new Error(`${base}.matchId: неизвестный id «${matchId}»`);
+      }
+      const pred: PlayerPrediction = {
+        home: num(p.home, `${base}.home`),
+        away: num(p.away, `${base}.away`),
+      };
+      if (typeof p.winner === "string" && p.winner.trim()) {
+        pred.winner = p.winner.trim();
+      }
+      if (typeof p.method === "string" && (p.method === "regular" || p.method === "extraTime" || p.method === "penalties")) {
+        pred.method = p.method;
+      }
+      predictions.set(matchId, pred);
     }
-    const pred: PlayerPrediction = {
-      home: num(p.home, `${base}.home`),
-      away: num(p.away, `${base}.away`),
-    };
-    if (typeof p.winner === "string" && p.winner.trim()) {
-      pred.winner = p.winner.trim();
-    }
-    if (typeof p.method === "string" && (p.method === "regular" || p.method === "extraTime" || p.method === "penalties")) {
-      pred.method = p.method;
-    }
-    predictions.set(matchId, pred);
+  } else {
+    throw new Error("predictions должен быть объектом (хэш-таблицей) или массивом");
   }
 
   const groupStandingsRaw = data.groupStandings;
@@ -162,12 +186,12 @@ export function draftFromPredictionsMap(
   return r;
 }
 
-/** Только полностью заполненные строки — в JSON */
-export function predictionsArrayFromDraft(
+/** Только полностью заполненные строки — в JSON (хэш-таблица matchId → счёт) */
+export function predictionsMapFromDraft(
   matches: MatchDef[],
   draft: Record<MatchId, { h: string; a: string; winner?: string; method?: PlayoffWinMethod }>,
-): PlayerPrediction[] {
-  const out: PlayerPrediction[] = [];
+): Record<MatchId, PlayerPrediction> {
+  const out: Record<MatchId, PlayerPrediction> = {};
   for (const m of matches) {
     const d = draft[m.id];
     if (!d) continue;
@@ -176,20 +200,13 @@ export function predictionsArrayFromDraft(
     if (!Number.isInteger(home) || home < 0 || !Number.isInteger(away) || away < 0) {
       continue;
     }
-    const pred: PlayerPrediction = {
-      matchId: m.id,
-      groupName: m.phase,
-      matchDateTime: `${m.date} ${m.time}`,
-      matchText: `${m.homeTeam} - ${m.awayTeam}`,
-      home,
-      away,
-    };
+    const pred: PlayerPrediction = { home, away };
     // Добавляем winner/method только если они указаны и счёт ничейный
     if (d.winner && d.method && home === away) {
       pred.winner = d.winner;
       pred.method = d.method;
     }
-    out.push(pred);
+    out[m.id] = pred;
   }
   return out;
 }
@@ -197,7 +214,7 @@ export function predictionsArrayFromDraft(
 export function mergePlayerRawJson(
   existingRaw: string,
   name: string,
-  predictionsArr: PlayerPrediction[],
+  predictionsMap: Record<MatchId, PlayerPrediction>,
 ): string {
   try {
     const data = JSON.parse(existingRaw) as unknown;
@@ -206,7 +223,7 @@ export function mergePlayerRawJson(
         {
           ...(data as Record<string, unknown>),
           player: name,
-          predictions: predictionsArr,
+          predictions: predictionsMap,
         },
         null,
         2,
@@ -216,23 +233,20 @@ export function mergePlayerRawJson(
     /* минимальный объект */
   }
   return JSON.stringify(
-    { player: name, predictions: predictionsArr },
+    { player: name, predictions: predictionsMap },
     null,
     2,
   );
 }
 
 export function playerJsonTemplate(matches: MatchDef[]): PlayerJson {
+  const predictions: Record<MatchId, PlayerPrediction> = {};
+  for (const match of matches) {
+    predictions[match.id] = { home: 0, away: 0 };
+  }
   return {
     player: "Имя игрока",
-    predictions: matches.map((match) => ({
-      matchId: match.id,
-      groupName: match.phase,
-      matchDateTime: `${match.date} ${match.time}`,
-      matchText: `${match.homeTeam} - ${match.awayTeam}`,
-      home: 0,
-      away: 0,
-    })),
+    predictions,
     groupStandings: [
       {
         group: "Группа A",

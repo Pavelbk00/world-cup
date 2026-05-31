@@ -1,11 +1,11 @@
 import type { MatchDef } from "./types";
 
 /**
- * Каталог матчей: id должны совпадать с полем matchId в JSON игроков.
- * Список можно править под ваш турнир / этап.
+ * Каталог матчей: хэш-таблица (matchId → MatchDef) для O(1) доступа.
+ * Ключ совпадает с полем id внутри объекта.
  */
-export const DEFAULT_MATCHES: MatchDef[] = [
-  {
+export const DEFAULT_MATCHES: Record<string, MatchDef> = {
+  "wc-001": {
     id: "wc-001",
     date: "11.06.2026",
     time: "22:00",
@@ -13,7 +13,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "ЮАР",
     phase: "Группа A",
   },
-  {
+  "wc-002": {
     id: "wc-002",
     date: "12.06.2026",
     time: "05:00",
@@ -21,7 +21,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Чехия",
     phase: "Группа A",
   },
-  {
+  "wc-003": {
     id: "wc-003",
     date: "19.06.2026",
     time: "19:00",
@@ -29,7 +29,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "ЮАР",
     phase: "Группа A",
   },
-  {
+  "wc-004": {
     id: "wc-004",
     date: "19.06.2026",
     time: "04:00",
@@ -37,7 +37,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Южная Корея",
     phase: "Группа A",
   },
-  {
+  "wc-005": {
     id: "wc-005",
     date: "25.06.2026",
     time: "04:00",
@@ -45,7 +45,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Мексика",
     phase: "Группа A",
   },
-  {
+  "wc-006": {
     id: "wc-006",
     date: "25.06.2026",
     time: "04:00",
@@ -54,7 +54,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа A",
   },
 
-  {
+  "wc-007": {
     id: "wc-007",
     date: "12.06.2026",
     time: "22:00",
@@ -62,7 +62,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Босния",
     phase: "Группа B",
   },
-  {
+  "wc-008": {
     id: "wc-008",
     date: "13.06.2026",
     time: "22:00",
@@ -70,7 +70,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Швейцария",
     phase: "Группа B",
   },
-  {
+  "wc-009": {
     id: "wc-009",
     date: "18.06.2026",
     time: "22:00",
@@ -78,7 +78,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Босния",
     phase: "Группа B",
   },
-  {
+  "wc-010": {
     id: "wc-010",
     date: "19.06.2026",
     time: "01:00",
@@ -86,7 +86,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Катар",
     phase: "Группа B",
   },
-  {
+  "wc-011": {
     id: "wc-011",
     date: "24.06.2026",
     time: "22:00",
@@ -94,7 +94,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Канада",
     phase: "Группа B",
   },
-  {
+  "wc-012": {
     id: "wc-012",
     date: "24.06.2026",
     time: "22:00",
@@ -103,7 +103,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа B",
   },
 
-  {
+  "wc-013": {
     id: "wc-013",
     date: "14.06.2026",
     time: "01:00",
@@ -111,7 +111,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Марокко",
     phase: "Группа C",
   },
-  {
+  "wc-014": {
     id: "wc-014",
     date: "14.06.2026",
     time: "04:00",
@@ -119,7 +119,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Шотландия",
     phase: "Группа C",
   },
-  {
+  "wc-015": {
     id: "wc-015",
     date: "20.06.2026",
     time: "01:00",
@@ -127,7 +127,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Марокко",
     phase: "Группа C",
   },
-  {
+  "wc-016": {
     id: "wc-016",
     date: "20.06.2026",
     time: "04:00",
@@ -135,7 +135,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Гаити",
     phase: "Группа C",
   },
-  {
+  "wc-017": {
     id: "wc-017",
     date: "25.06.2026",
     time: "01:00",
@@ -143,7 +143,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Бразилия",
     phase: "Группа C",
   },
-  {
+  "wc-018": {
     id: "wc-018",
     date: "25.06.2026",
     time: "01:00",
@@ -152,7 +152,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа C",
   },
 
-  {
+  "wc-019": {
     id: "wc-019",
     date: "13.06.2026",
     time: "04:00",
@@ -160,7 +160,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Парагвай",
     phase: "Группа D",
   },
-  {
+  "wc-020": {
     id: "wc-020",
     date: "14.06.2026",
     time: "07:00",
@@ -168,7 +168,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Турция",
     phase: "Группа D",
   },
-  {
+  "wc-021": {
     id: "wc-021",
     date: "19.06.2026",
     time: "22:00",
@@ -176,7 +176,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Австралия",
     phase: "Группа D",
   },
-  {
+  "wc-022": {
     id: "wc-022",
     date: "20.06.2026",
     time: "07:00",
@@ -184,7 +184,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Парагвай",
     phase: "Группа D",
   },
-  {
+  "wc-023": {
     id: "wc-023",
     date: "26.06.2026",
     time: "05:00",
@@ -192,7 +192,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "США",
     phase: "Группа D",
   },
-  {
+  "wc-024": {
     id: "wc-024",
     date: "26.06.2026",
     time: "05:00",
@@ -201,7 +201,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа D",
   },
 
-  {
+  "wc-025": {
     id: "wc-025",
     date: "14.06.2026",
     time: "23:00",
@@ -209,7 +209,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Япония",
     phase: "Группа E",
   },
-  {
+  "wc-026": {
     id: "wc-026",
     date: "15.06.2026",
     time: "05:00",
@@ -217,7 +217,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Тунис",
     phase: "Группа E",
   },
-  {
+  "wc-027": {
     id: "wc-027",
     date: "20.06.2026",
     time: "20:00",
@@ -225,7 +225,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Швеция",
     phase: "Группа E",
   },
-  {
+  "wc-028": {
     id: "wc-028",
     date: "21.06.2026",
     time: "07:00",
@@ -233,7 +233,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Япония",
     phase: "Группа E",
   },
-  {
+  "wc-029": {
     id: "wc-029",
     date: "26.06.2026",
     time: "02:00",
@@ -241,7 +241,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Швеция",
     phase: "Группа E",
   },
-  {
+  "wc-030": {
     id: "wc-030",
     date: "26.06.2026",
     time: "02:00",
@@ -250,7 +250,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа E",
   },
 
-  {
+  "wc-031": {
     id: "wc-031",
     date: "14.06.2026",
     time: "20:00",
@@ -258,23 +258,23 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Кюрасао",
     phase: "Группа F",
   },
-  {
+  "wc-032": {
     id: "wc-032",
     date: "15.06.2026",
     time: "02:00",
-    homeTeam: "Кот-д’Ивуар",
+    homeTeam: "Кот-д'Ивуар",
     awayTeam: "Эквадор",
     phase: "Группа F",
   },
-  {
+  "wc-033": {
     id: "wc-033",
     date: "20.06.2026",
     time: "23:00",
     homeTeam: "Германия",
-    awayTeam: "Кот-д’Ивуар",
+    awayTeam: "Кот-д'Ивуар",
     phase: "Группа F",
   },
-  {
+  "wc-034": {
     id: "wc-034",
     date: "21.06.2026",
     time: "03:00",
@@ -282,15 +282,15 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Кюрасао",
     phase: "Группа F",
   },
-  {
+  "wc-035": {
     id: "wc-035",
     date: "25.06.2026",
     time: "23:00",
     homeTeam: "Кюрасао",
-    awayTeam: "Кот-д’Ивуар",
+    awayTeam: "Кот-д'Ивуар",
     phase: "Группа F",
   },
-  {
+  "wc-036": {
     id: "wc-036",
     date: "25.06.2026",
     time: "23:00",
@@ -299,7 +299,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа F",
   },
 
-  {
+  "wc-037": {
     id: "wc-037",
     date: "15.06.2026",
     time: "19:00",
@@ -307,7 +307,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Кабо-Верде",
     phase: "Группа G",
   },
-  {
+  "wc-038": {
     id: "wc-038",
     date: "16.06.2026",
     time: "01:00",
@@ -315,7 +315,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Уругвай",
     phase: "Группа G",
   },
-  {
+  "wc-039": {
     id: "wc-039",
     date: "21.06.2026",
     time: "19:00",
@@ -323,7 +323,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Саудовская Аравия",
     phase: "Группа G",
   },
-  {
+  "wc-040": {
     id: "wc-040",
     date: "22.06.2026",
     time: "01:00",
@@ -331,7 +331,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Кабо-Верде",
     phase: "Группа G",
   },
-  {
+  "wc-041": {
     id: "wc-041",
     date: "27.06.2026",
     time: "03:00",
@@ -339,7 +339,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Саудовская Аравия",
     phase: "Группа G",
   },
-  {
+  "wc-042": {
     id: "wc-042",
     date: "27.06.2026",
     time: "03:00",
@@ -348,7 +348,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа G",
   },
 
-  {
+  "wc-043": {
     id: "wc-043",
     date: "15.06.2026",
     time: "22:00",
@@ -356,7 +356,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Египет",
     phase: "Группа H",
   },
-  {
+  "wc-044": {
     id: "wc-044",
     date: "16.06.2026",
     time: "04:00",
@@ -364,7 +364,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Новая Зеландия",
     phase: "Группа H",
   },
-  {
+  "wc-045": {
     id: "wc-045",
     date: "21.06.2026",
     time: "22:00",
@@ -372,7 +372,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Иран",
     phase: "Группа H",
   },
-  {
+  "wc-046": {
     id: "wc-046",
     date: "22.06.2026",
     time: "04:00",
@@ -380,7 +380,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Египет",
     phase: "Группа H",
   },
-  {
+  "wc-047": {
     id: "wc-047",
     date: "27.06.2026",
     time: "06:00",
@@ -388,7 +388,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Иран",
     phase: "Группа H",
   },
-  {
+  "wc-048": {
     id: "wc-048",
     date: "27.06.2026",
     time: "06:00",
@@ -397,7 +397,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа H",
   },
 
-  {
+  "wc-049": {
     id: "wc-049",
     date: "16.06.2026",
     time: "22:00",
@@ -405,7 +405,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Сенегал",
     phase: "Группа I",
   },
-  {
+  "wc-050": {
     id: "wc-050",
     date: "17.06.2026",
     time: "01:00",
@@ -413,7 +413,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Норвегия",
     phase: "Группа I",
   },
-  {
+  "wc-051": {
     id: "wc-051",
     date: "23.06.2026",
     time: "00:00",
@@ -421,7 +421,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Ирак",
     phase: "Группа I",
   },
-  {
+  "wc-052": {
     id: "wc-052",
     date: "23.06.2026",
     time: "03:00",
@@ -429,7 +429,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Сенегал",
     phase: "Группа I",
   },
-  {
+  "wc-053": {
     id: "wc-053",
     date: "26.06.2026",
     time: "22:00",
@@ -437,7 +437,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Франция",
     phase: "Группа I",
   },
-  {
+  "wc-054": {
     id: "wc-054",
     date: "26.06.2026",
     time: "22:00",
@@ -446,7 +446,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа I",
   },
 
-  {
+  "wc-055": {
     id: "wc-055",
     date: "17.06.2026",
     time: "04:00",
@@ -454,7 +454,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Алжир",
     phase: "Группа J",
   },
-  {
+  "wc-056": {
     id: "wc-056",
     date: "17.06.2026",
     time: "07:00",
@@ -462,7 +462,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Иордания",
     phase: "Группа J",
   },
-  {
+  "wc-057": {
     id: "wc-057",
     date: "22.06.2026",
     time: "20:00",
@@ -470,7 +470,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Австрия",
     phase: "Группа J",
   },
-  {
+  "wc-058": {
     id: "wc-058",
     date: "23.06.2026",
     time: "06:00",
@@ -478,7 +478,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Алжир",
     phase: "Группа J",
   },
-  {
+  "wc-059": {
     id: "wc-059",
     date: "28.06.2026",
     time: "05:00",
@@ -486,7 +486,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Австрия",
     phase: "Группа J",
   },
-  {
+  "wc-060": {
     id: "wc-060",
     date: "28.06.2026",
     time: "05:00",
@@ -495,7 +495,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа J",
   },
 
-  {
+  "wc-061": {
     id: "wc-061",
     date: "17.06.2026",
     time: "23:00",
@@ -503,7 +503,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Хорватия",
     phase: "Группа K",
   },
-  {
+  "wc-062": {
     id: "wc-062",
     date: "18.06.2026",
     time: "02:00",
@@ -511,7 +511,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Панама",
     phase: "Группа K",
   },
-  {
+  "wc-063": {
     id: "wc-063",
     date: "23.06.2026",
     time: "23:00",
@@ -519,7 +519,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Гана",
     phase: "Группа K",
   },
-  {
+  "wc-064": {
     id: "wc-064",
     date: "24.06.2026",
     time: "02:00",
@@ -527,7 +527,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Хорватия",
     phase: "Группа K",
   },
-  {
+  "wc-065": {
     id: "wc-065",
     date: "28.06.2026",
     time: "00:00",
@@ -535,7 +535,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Англия",
     phase: "Группа K",
   },
-  {
+  "wc-066": {
     id: "wc-066",
     date: "28.06.2026",
     time: "00:00",
@@ -544,7 +544,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Группа K",
   },
 
-  {
+  "wc-067": {
     id: "wc-067",
     date: "17.06.2026",
     time: "20:00",
@@ -552,7 +552,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "ДР Конго",
     phase: "Группа L",
   },
-  {
+  "wc-068": {
     id: "wc-068",
     date: "18.06.2026",
     time: "05:00",
@@ -560,7 +560,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Колумбия",
     phase: "Группа L",
   },
-  {
+  "wc-069": {
     id: "wc-069",
     date: "23.06.2026",
     time: "20:00",
@@ -568,7 +568,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Узбекистан",
     phase: "Группа L",
   },
-  {
+  "wc-070": {
     id: "wc-070",
     date: "24.06.2026",
     time: "05:00",
@@ -576,7 +576,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "ДР Конго",
     phase: "Группа L",
   },
-  {
+  "wc-071": {
     id: "wc-071",
     date: "28.06.2026",
     time: "02:30",
@@ -584,7 +584,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     awayTeam: "Португалия",
     phase: "Группа L",
   },
-  {
+  "wc-072": {
     id: "wc-072",
     date: "28.06.2026",
     time: "02:30",
@@ -599,7 +599,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
    * поэтому редактирование прогнозов не блокируется по времени.
    */
   // 1/16 финала
-  {
+  "wc-073": {
     id: "wc-073",
     date: "30.06.2026",
     time: "17:00",
@@ -608,7 +608,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-074": {
     id: "wc-074",
     date: "30.06.2026",
     time: "20:00",
@@ -617,7 +617,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-075": {
     id: "wc-075",
     date: "30.06.2026",
     time: "23:00",
@@ -626,7 +626,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-076": {
     id: "wc-076",
     date: "01.07.2026",
     time: "02:00",
@@ -635,7 +635,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-077": {
     id: "wc-077",
     date: "01.07.2026",
     time: "17:00",
@@ -644,7 +644,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-078": {
     id: "wc-078",
     date: "01.07.2026",
     time: "20:00",
@@ -653,7 +653,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-079": {
     id: "wc-079",
     date: "01.07.2026",
     time: "23:00",
@@ -662,7 +662,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-080": {
     id: "wc-080",
     date: "02.07.2026",
     time: "02:00",
@@ -671,7 +671,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-081": {
     id: "wc-081",
     date: "02.07.2026",
     time: "17:00",
@@ -680,7 +680,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-082": {
     id: "wc-082",
     date: "02.07.2026",
     time: "20:00",
@@ -689,7 +689,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-083": {
     id: "wc-083",
     date: "02.07.2026",
     time: "23:00",
@@ -698,7 +698,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-084": {
     id: "wc-084",
     date: "03.07.2026",
     time: "02:00",
@@ -707,7 +707,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-085": {
     id: "wc-085",
     date: "03.07.2026",
     time: "17:00",
@@ -716,7 +716,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-086": {
     id: "wc-086",
     date: "03.07.2026",
     time: "20:00",
@@ -725,7 +725,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-087": {
     id: "wc-087",
     date: "03.07.2026",
     time: "23:00",
@@ -734,7 +734,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/16 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-088": {
     id: "wc-088",
     date: "04.07.2026",
     time: "02:00",
@@ -744,7 +744,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     isPlaceholder: true,
   },
   // 1/8 финала
-  {
+  "wc-089": {
     id: "wc-089",
     date: "06.07.2026",
     time: "17:00",
@@ -753,7 +753,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-090": {
     id: "wc-090",
     date: "06.07.2026",
     time: "20:00",
@@ -762,7 +762,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-091": {
     id: "wc-091",
     date: "06.07.2026",
     time: "23:00",
@@ -771,7 +771,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-092": {
     id: "wc-092",
     date: "07.07.2026",
     time: "02:00",
@@ -780,7 +780,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-093": {
     id: "wc-093",
     date: "07.07.2026",
     time: "17:00",
@@ -789,7 +789,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-094": {
     id: "wc-094",
     date: "07.07.2026",
     time: "20:00",
@@ -798,7 +798,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-095": {
     id: "wc-095",
     date: "07.07.2026",
     time: "23:00",
@@ -807,7 +807,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/8 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-096": {
     id: "wc-096",
     date: "08.07.2026",
     time: "02:00",
@@ -817,7 +817,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     isPlaceholder: true,
   },
   // 1/4 финала
-  {
+  "wc-097": {
     id: "wc-097",
     date: "10.07.2026",
     time: "17:00",
@@ -826,7 +826,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/4 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-098": {
     id: "wc-098",
     date: "10.07.2026",
     time: "20:00",
@@ -835,7 +835,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/4 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-099": {
     id: "wc-099",
     date: "10.07.2026",
     time: "23:00",
@@ -844,7 +844,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/4 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-100": {
     id: "wc-100",
     date: "11.07.2026",
     time: "02:00",
@@ -854,7 +854,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     isPlaceholder: true,
   },
   // 1/2 финала
-  {
+  "wc-101": {
     id: "wc-101",
     date: "14.07.2026",
     time: "20:00",
@@ -863,7 +863,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "1/2 финала",
     isPlaceholder: true,
   },
-  {
+  "wc-102": {
     id: "wc-102",
     date: "15.07.2026",
     time: "20:00",
@@ -873,7 +873,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     isPlaceholder: true,
   },
   // Матч за 3-е место
-  {
+  "wc-103": {
     id: "wc-103",
     date: "18.07.2026",
     time: "20:00",
@@ -883,7 +883,7 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     isPlaceholder: true,
   },
   // Финал
-  {
+  "wc-104": {
     id: "wc-104",
     date: "19.07.2026",
     time: "23:00",
@@ -892,4 +892,10 @@ export const DEFAULT_MATCHES: MatchDef[] = [
     phase: "Финал",
     isPlaceholder: true,
   },
-];
+};
+
+/** Упорядоченный список матчей (для итераций, рендера и т.д.) */
+export const DEFAULT_MATCHES_LIST: MatchDef[] = Object.values(DEFAULT_MATCHES);
+
+/** Множество всех допустимых matchId */
+export const MATCH_IDS = new Set<string>(Object.keys(DEFAULT_MATCHES));

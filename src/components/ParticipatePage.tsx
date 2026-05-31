@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { MatchId, MedalistsPrediction, PlayerState, MatchDef, ScoreDraftEntry } from "../types";
-import { DEFAULT_MATCHES } from "../matches";
+import { DEFAULT_MATCHES_LIST } from "../matches";
 import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "../matchUtils";
 
 /** Парсит "DD.MM.YYYY HH:MM" в число для сравнения */
@@ -12,7 +12,7 @@ function matchDateTimeToMs(dateStr: string, timeStr: string): number {
 
 /** Матчи, отсортированные по дате/времени (константа, вычисляется один раз) */
 const SORTED_MATCHES: MatchDef[] = (() => {
-  const sorted = [...DEFAULT_MATCHES];
+  const sorted = [...DEFAULT_MATCHES_LIST];
   sorted.sort((a, b) => {
     const aMs = matchDateTimeToMs(a.date, a.time);
     const bMs = matchDateTimeToMs(b.date, b.time);
@@ -24,7 +24,7 @@ const SORTED_MATCHES: MatchDef[] = (() => {
 /** Все уникальные команды группового этапа (не заглушки) для выбора призёров */
 const ALL_TEAMS: string[] = (() => {
   const set = new Set<string>();
-  for (const m of DEFAULT_MATCHES) {
+  for (const m of DEFAULT_MATCHES_LIST) {
     if (m.isPlaceholder) continue;
     set.add(m.homeTeam);
     set.add(m.awayTeam);
@@ -34,7 +34,7 @@ const ALL_TEAMS: string[] = (() => {
 
 /** Дата и время первого матча турнира */
 const FIRST_MATCH = (() => {
-  const first = DEFAULT_MATCHES.find((m) => !m.isPlaceholder);
+  const first = DEFAULT_MATCHES_LIST.find((m) => !m.isPlaceholder);
   if (!first) return new Date(0);
   const [day, month, year] = first.date.split(".").map(Number);
   const [hours, minutes] = first.time.split(":").map(Number);

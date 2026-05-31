@@ -1,5 +1,5 @@
-import type { PlayerState, PlayerPrediction } from "../types";
-import { DEFAULT_MATCHES } from "../matches";
+import type { MatchId, PlayerState, PlayerPrediction } from "../types";
+import { MATCH_IDS } from "../matches";
 import { parsePlayersFile, PLAYER_SLOTS } from "../parsePlayerJson";
 import { emptyPlayers, newPlayerId } from "./persistence";
 import { storeHandle, loadHandle, removeHandle } from "./db";
@@ -19,7 +19,7 @@ function playerNameSlug(name: string): string {
 
 export interface ExportShape {
   player: string;
-  predictions: PlayerPrediction[];
+  predictions: Record<MatchId, PlayerPrediction>;
   groupStandings: PlayerState["groupStandings"];
   topScorer: PlayerState["topScorer"];
   medalists: PlayerState["medalists"];
@@ -28,19 +28,13 @@ export interface ExportShape {
 function buildExport(player: PlayerState): ExportShape | null {
   const name = player.name.trim();
   if (!name) return null;
-  const predictions: PlayerPrediction[] = [];
+  const predictions: Record<MatchId, PlayerPrediction> = {};
   for (const [matchId, score] of player.predictions) {
-    const def = DEFAULT_MATCHES.find((m) => m.id === matchId);
-    predictions.push({
-      matchId,
-      groupName: def?.phase,
-      matchDateTime: def ? `${def.date} ${def.time}` : undefined,
-      matchText: def ? `${def.homeTeam} - ${def.awayTeam}` : undefined,
-      home: score.home,
-      away: score.away,
-    });
+    const pred: PlayerPrediction = { home: score.home, away: score.away };
+    if (score.winner) pred.winner = score.winner;
+    if (score.method) pred.method = score.method;
+    predictions[matchId] = pred;
   }
-  predictions.sort((a, b) => (a.matchId ?? "").localeCompare(b.matchId ?? ""));
 
   return {
     player: name,
@@ -90,17 +84,28 @@ export async function loadPlayerFile(name: string): Promise<PlayerState | null> 
     const file = await fileHandle.getFile();
     const text = await file.text();
     const data = JSON.parse(text) as ExportShape;
-    const { players: parsed } = parsePlayersFile(text, new Set(DEFAULT_MATCHES.map(m => m.id)));
+    const { players: parsed } = parsePlayersFile(text, MATCH_IDS);
     if (parsed.length === 1) {
       return { ...parsed[0], id: newPlayerId(), parseError: null };
     }
-    // fallback: build from data
+    // fallback: build from data (поддержка хэш-таблицы и массива)
     const predsMap = new Map<string, PlayerPrediction>();
-    for (const p of data.predictions) {
-      const prediction: PlayerPrediction = { home: p.home, away: p.away };
-      if (p.winner) prediction.winner = p.winner;
-      if (p.method) prediction.method = p.method;
-      if (p.matchId) predsMap.set(p.matchId, prediction);
+    if (Array.isArray(data.predictions)) {
+      for (const p of data.predictions as Array<PlayerPrediction & { matchId?: string }>) {
+        const prediction: PlayerPrediction = { home: p.home, away: p.away };
+        if (p.winner) prediction.winner = p.winner;
+        if (p.method) prediction.method = p.method;
+        if (p.matchId) predsMap.set(p.matchId, prediction);
+      }
+    } else if (data.predictions && typeof data.predictions === "object") {
+      for (const [matchId, pred] of Object.entries(data.predictions)) {
+        if (typeof pred === "object" && pred !== null) {
+          const p: PlayerPrediction = { home: pred.home, away: pred.away };
+          if (pred.winner) p.winner = pred.winner;
+          if (pred.method) p.method = pred.method;
+          predsMap.set(matchId, p);
+        }
+      }
     }
     return {
       id: newPlayerId(),
@@ -131,17 +136,28 @@ export async function loadAllPlayers(): Promise<PlayerState[]> {
         const fileHandle = await handle.getFileHandle(entry.name);
         const file = await fileHandle.getFile();
         const text = await file.text();
-        const { players: parsed } = parsePlayersFile(text, new Set(DEFAULT_MATCHES.map(m => m.id)));
+        const { players: parsed } = parsePlayersFile(text, MATCH_IDS);
         if (parsed.length === 1) {
           result.push({ ...parsed[0], id: newPlayerId(), parseError: null });
         } else {
           const data = JSON.parse(text) as ExportShape;
     const predsMap = new Map<string, PlayerPrediction>();
-    for (const p of data.predictions) {
-      const prediction: PlayerPrediction = { home: p.home, away: p.away };
-      if (p.winner) prediction.winner = p.winner;
-      if (p.method) prediction.method = p.method;
-      if (p.matchId) predsMap.set(p.matchId, prediction);
+    if (Array.isArray(data.predictions)) {
+      for (const p of data.predictions as Array<PlayerPrediction & { matchId?: string }>) {
+        const prediction: PlayerPrediction = { home: p.home, away: p.away };
+        if (p.winner) prediction.winner = p.winner;
+        if (p.method) prediction.method = p.method;
+        if (p.matchId) predsMap.set(p.matchId, prediction);
+      }
+    } else if (data.predictions && typeof data.predictions === "object") {
+      for (const [matchId, pred] of Object.entries(data.predictions)) {
+        if (typeof pred === "object" && pred !== null) {
+          const p: PlayerPrediction = { home: pred.home, away: pred.away };
+          if (pred.winner) p.winner = pred.winner;
+          if (pred.method) p.method = pred.method;
+          predsMap.set(matchId, p);
+        }
+      }
     }
     result.push({
       id: newPlayerId(),
