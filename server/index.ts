@@ -229,118 +229,129 @@ app.get("/api/players/:login", async (req, res) => {
 
 // POST /api/players/save — save (create or overwrite) player predictions by login
 app.post("/api/players/save", async (req, res) => {
-  const body = req.body as {
-    login: string;
-    player: string;
-    predictions: Record<string, { home: number; away: number; winner?: string; method?: string }>;
-    groupStandings?: unknown[];
-    playoff?: unknown[];
-    topScorer?: unknown;
-    medalists?: unknown;
-  };
-
-  if (!body.login || !body.login.trim()) {
-    res.status(400).json({ error: "Login required" });
-    return;
-  }
-
-  const login = body.login.trim().toLowerCase();
-
-  // Проверяем, что пользователь есть в users.json
-  const user = registeredUsers.find((u) => u.login === login);
-  if (!user) {
-    res.status(403).json({ error: "Unknown user" });
-    return;
-  }
-
-  // Загружаем существующие данные, если есть
-  let existingData: Record<string, unknown> | null = null;
   try {
-    const existingContent = await fs.readFile(
-      path.join(DATA_DIR, `${login}.json`),
-      "utf-8",
-    );
-    const parsed = JSON.parse(existingContent);
-    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-      existingData = normalizePredictions(parsed as Record<string, unknown>);
-    }
-  } catch {
-    // Файла нет — первый раз
-  }
+    const body = req.body as {
+      login: string;
+      player: string;
+      predictions: Record<string, { home: number; away: number; winner?: string; method?: string }>;
+      groupStandings?: unknown[];
+      playoff?: unknown[];
+      topScorer?: unknown;
+      medalists?: unknown;
+    };
 
-  // Собираем существующие прогнозы по matchId для начавшихся матчей
-  // После normalizePredictions predictions всегда хэш-таблица
-  const existingPredsMap = new Map<string, { home: number; away: number }>();
-  if (existingData) {
-    const preds = existingData.predictions;
-    if (preds && typeof preds === "object" && !Array.isArray(preds)) {
-      for (const [matchId, val] of Object.entries(preds as Record<string, unknown>)) {
-        if (val && typeof val === "object" && typeof (val as Record<string, unknown>).home === "number" && typeof (val as Record<string, unknown>).away === "number") {
-          existingPredsMap.set(matchId, { home: (val as { home: number; away: number }).home, away: (val as { home: number; away: number }).away });
+    if (!body.login || !body.login.trim()) {
+      res.status(400).json({ error: "Login required" });
+      return;
+    }
+
+    const login = body.login.trim().toLowerCase();
+
+    // Проверяем, что пользователь есть в users.json
+    const user = registeredUsers.find((u) => u.login === login);
+    if (!user) {
+      res.status(403).json({ error: "Unknown user" });
+      return;
+    }
+
+    // Загружаем существующие данные, если есть
+    let existingData: Record<string, unknown> | null = null;
+    try {
+      const existingContent = await fs.readFile(
+        path.join(DATA_DIR, `${login}.json`),
+        "utf-8",
+      );
+      const parsed = JSON.parse(existingContent);
+      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+        existingData = normalizePredictions(parsed as Record<string, unknown>);
+      }
+    } catch {
+      // Файла нет — первый раз
+    }
+
+    // Собираем существующие прогнозы по matchId для начавшихся матчей
+    const existingPredsMap = new Map<string, { home: number; away: number }>();
+    if (existingData) {
+      const preds = existingData.predictions;
+      if (preds && typeof preds === "object" && !Array.isArray(preds)) {
+        for (const [matchId, val] of Object.entries(preds as Record<string, unknown>)) {
+          if (val && typeof val === "object" && typeof (val as Record<string, unknown>).home === "number" && typeof (val as Record<string, unknown>).away === "number") {
+            existingPredsMap.set(matchId, { home: (val as { home: number; away: number }).home, away: (val as { home: number; away: number }).away });
+          }
         }
       }
     }
-  }
 
-  let topScorer = body.topScorer ?? null;
-  let medalists = body.medalists ?? null;
+    let topScorer = body.topScorer ?? null;
+    let medalists = body.medalists ?? null;
 
-  // Если первый матч начался — игнорируем новые значения призёров и бомбардира,
-  // используем существующие из файла (защита от прямых запросов к API)
-  if (isFirstMatchStarted()) {
-    topScorer = existingData?.topScorer ?? null;
-    medalists = existingData?.medalists ?? null;
-  }
+    // Если первый матч начался — игнорируем новые значения призёров и бомбардира,
+    // используем существующие из файла (защита от прямых запросов к API)
+    if (isFirstMatchStarted()) {
+      topScorer = existingData?.topScorer ?? null;
+      medalists = existingData?.medalists ?? null;
+    }
 
-  // Валидируем прогнозы: если матч уже начался, оставляем существующий
-  const validatedPredictions: Record<string, { home: number; away: number; winner?: string; method?: string }> = {};
+    // Валидируем прогнозы: если матч уже начался, оставляем существующий
+    const validatedPredictions: Record<string, { home: number; away: number; winner?: string; method?: string }> = {};
 
-  if (body.predictions && typeof body.predictions === "object" && !Array.isArray(body.predictions)) {
-    for (const [matchId, pred] of Object.entries(body.predictions)) {
-      if (typeof pred !== "object" || pred === null) continue;
-      if (typeof pred.home !== "number" || typeof pred.away !== "number") continue;
+    if (body.predictions && typeof body.predictions === "object" && !Array.isArray(body.predictions)) {
+      for (const [matchId, pred] of Object.entries(body.predictions)) {
+        if (typeof pred !== "object" || pred === null) continue;
+        if (typeof pred.home !== "number" || typeof pred.away !== "number") continue;
 
-      if (hasMatchStarted(matchId)) {
-        // Матч уже начался — берём существующий прогноз (или 0:0)
-        const existing = existingPredsMap.get(matchId);
-        validatedPredictions[matchId] = {
-          home: existing?.home ?? 0,
-          away: existing?.away ?? 0,
-        };
-      } else {
-        // Матч ещё не начался — используем как есть
-        const validated: { home: number; away: number; winner?: string; method?: string } = {
-          home: pred.home,
-          away: pred.away,
-        };
-        if (pred.winner && typeof pred.winner === "string") validated.winner = pred.winner;
-        if (pred.method && typeof pred.method === "string") validated.method = pred.method;
-        validatedPredictions[matchId] = validated;
+        if (hasMatchStarted(matchId)) {
+          // Матч уже начался — берём существующий прогноз (или 0:0)
+          const existing = existingPredsMap.get(matchId);
+          validatedPredictions[matchId] = {
+            home: existing?.home ?? 0,
+            away: existing?.away ?? 0,
+          };
+        } else {
+          // Матч ещё не начался — используем как есть
+          const validated: { home: number; away: number; winner?: string; method?: string } = {
+            home: pred.home,
+            away: pred.away,
+          };
+          if (pred.winner && typeof pred.winner === "string") validated.winner = pred.winner;
+          if (pred.method && typeof pred.method === "string") validated.method = pred.method;
+          validatedPredictions[matchId] = validated;
+        }
       }
     }
-  }
 
-  const payload = {
-    player: user.nickname,
-    login: user.login,
-    predictions: validatedPredictions,
-    groupStandings: body.groupStandings ?? [],
-    playoff: body.playoff ?? [],
-    topScorer,
-    medalists,
-    updated_at: new Date().toISOString(),
-  };
+    const payload = {
+      player: user.nickname,
+      login: user.login,
+      predictions: validatedPredictions,
+      groupStandings: body.groupStandings ?? [],
+      playoff: body.playoff ?? [],
+      topScorer,
+      medalists,
+      updated_at: new Date().toISOString(),
+    };
 
-  try {
-    await fs.writeFile(
-      path.join(DATA_DIR, `${login}.json`),
-      JSON.stringify(payload, null, 2),
-      "utf-8",
-    );
-    res.json({ ok: true });
+    try {
+      await fs.writeFile(
+        path.join(DATA_DIR, `${login}.json`),
+        JSON.stringify(payload, null, 2),
+        "utf-8",
+      );
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("Save error:", err);
+      res.status(500).json({ error: "Failed to save" });
+    }
   } catch (err) {
-    console.error("Save error:", err);
-    res.status(500).json({ error: "Failed to save" });
+    console.error("=== SAVE HANDLER ERROR ===");
+    console.error("Message:", err instanceof Error ? err.message : String(err));
+    console.error("Stack:", err instanceof Error ? err.stack : "N/A");
+    console.error("Body type:", typeof req.body);
+    console.error("Body keys:", req.body ? Object.keys(req.body) : "null");
+    console.error("Predictions type:", typeof req.body?.predictions);
+    console.error("Predictions constructor:", req.body?.predictions?.constructor?.name);
+    console.error("=========================");
+    res.status(500).json({ error: "Internal server error", details: err instanceof Error ? err.message : String(err) });
   }
 });
 
