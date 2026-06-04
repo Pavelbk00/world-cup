@@ -12,13 +12,14 @@ if [ "$DISK_USAGE" -gt 95 ]; then
     echo -e "${RED}❌ ВНИМАНИЕ: Диск заполнен на ${DISK_USAGE}%! Node.js не может писать JSON.${NC}"
 fi
 
-# 2. Проверяем синтаксис конфигурации Nginx
+# 2. Проверяем синтаксис конфигурации Nginx (Добавили глушение вывода > /dev/null)
 echo -e "${YELLOW}==> Проверка конфигурации Nginx...${NC}"
-if sudo nginx -t; then
+if sudo nginx -t > /dev/null 2>&1; then
     echo -e "${GREEN}✅ Конфигурация Nginx в порядке. Перезапускаем...${NC}"
     sudo systemctl restart nginx
 else
     echo -e "${RED}❌ Ошибка в конфигах Nginx! Попытка перезапуска пропущена.${NC}"
+    echo -e "${YELLOW}Запустите 'sudo nginx -t' вручную, чтобы увидеть ошибку.${NC}"
 fi
 
 # 3. Жесткая перезагрузка Node.js в PM2

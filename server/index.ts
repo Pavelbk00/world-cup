@@ -47,7 +47,7 @@ let registeredUsers: UserEntry[] = [];
 try {
   const usersContent = await fs.readFile(USERS_PATH, "utf-8");
   const usersData = JSON.parse(usersContent) as UsersFile;
-  registeredUsers = usersData.users ?? [];
+  registeredUsers = Array.isArray(usersData.users) ? usersData.users : [];
 } catch {
   console.warn("Could not read users.json, continuing without predefined users");
 }
@@ -260,26 +260,23 @@ app.post("/api/players/save", async (req, res) => {
       path.join(DATA_DIR, `${login}.json`),
       "utf-8",
     );
-    existingData = JSON.parse(existingContent);
+    const parsed = JSON.parse(existingContent);
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      existingData = normalizePredictions(parsed as Record<string, unknown>);
+    }
   } catch {
     // Файла нет — первый раз
   }
 
   // Собираем существующие прогнозы по matchId для начавшихся матчей
-  // Поддержка старого формата (массив) и нового (хэш-таблица)
+  // После normalizePredictions predictions всегда хэш-таблица
   const existingPredsMap = new Map<string, { home: number; away: number }>();
   if (existingData) {
     const preds = existingData.predictions;
-    if (Array.isArray(preds)) {
-      for (const p of preds as Array<{ matchId: string; home: number; away: number }>) {
-        if (typeof p.home === "number" && typeof p.away === "number" && p.matchId) {
-          existingPredsMap.set(p.matchId, { home: p.home, away: p.away });
-        }
-      }
-    } else if (preds && typeof preds === "object") {
-      for (const [matchId, val] of Object.entries(preds as Record<string, { home: number; away: number }>)) {
-        if (typeof val?.home === "number" && typeof val?.away === "number") {
-          existingPredsMap.set(matchId, { home: val.home, away: val.away });
+    if (preds && typeof preds === "object" && !Array.isArray(preds)) {
+      for (const [matchId, val] of Object.entries(preds as Record<string, unknown>)) {
+        if (val && typeof val === "object" && typeof (val as Record<string, unknown>).home === "number" && typeof (val as Record<string, unknown>).away === "number") {
+          existingPredsMap.set(matchId, { home: (val as { home: number; away: number }).home, away: (val as { home: number; away: number }).away });
         }
       }
     }
