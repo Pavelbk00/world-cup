@@ -3,16 +3,17 @@ import cors from "cors";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEFAULT_MATCHES } from "../src/matches.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");
 const USERS_PATH = path.join(__dirname, "..", "src", "users.json");
-const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
 
 // Ensure data dir exists
 await fs.mkdir(DATA_DIR, { recursive: true });
 
-// ---- Загрузка каталога матчей (для валидации по matchId) ----
+// ---- Каталог матчей (для валидации по matchId) ----
+// Импортируем из src/matches.ts — единый источник правды, отслеживается в git
 interface MatchDef {
   id: string;
   date: string;
@@ -23,13 +24,7 @@ interface MatchDef {
   isPlaceholder?: boolean;
 }
 
-let matchesCatalog: Record<string, MatchDef> = {};
-try {
-  const matchesContent = await fs.readFile(MATCHES_PATH, "utf-8");
-  matchesCatalog = JSON.parse(matchesContent);
-} catch {
-  console.warn("Could not read data/matches.json, match time validation disabled");
-}
+const matchesCatalog: Record<string, MatchDef> = DEFAULT_MATCHES;
 
 // ---- Загрузка users.json и создание файлов для каждого пользователя ----
 interface UserEntry {

@@ -7,10 +7,9 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist",
-    "rootDir": "server",
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["server"]
+  "include": ["server", "src/matches.ts", "src/types.ts"]
 }
