@@ -21,7 +21,6 @@ export interface ExportShape {
   topScorer: PlayerState["topScorer"];
   medalists: PlayerState["medalists"];
   /** Дата и время последнего обновления прогнозов (ISO 8601) */
-  updated_at?: string;
 }
 
 function buildExport(player: PlayerState, login: string): ExportShape {
@@ -110,11 +109,15 @@ export async function savePlayer(player: PlayerState, login: string): Promise<bo
   try {
     const res = await fetch(`${API_BASE}/players/save`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       body: JSON.stringify(data),
     });
+    if (!res.ok) {
+      console.error("[API] savePlayer failed:", res.status, await res.text().catch(() => ""));
+    }
     return res.ok;
-  } catch {
+  } catch (err) {
+    console.error("[API] savePlayer network error:", err);
     return false;
   }
 }

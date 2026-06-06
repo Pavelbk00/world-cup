@@ -29,6 +29,11 @@
       "login": "roman",
       "password": "River",
       "nickname": "Роман"
+    },
+    {
+      "login": "dolzhik",
+      "password": "vavilon",
+      "nickname": "Должик"
     }
   ]
 }

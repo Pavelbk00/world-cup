@@ -355,6 +355,18 @@ export function App() {
     })();
   }, [user?.login]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Гарантируем, что currentPlayer.name всегда заполнен (fallback на nickname из авторизации)
+  useEffect(() => {
+    if (!user) return;
+    if (currentPlayer.name?.trim()) return; // Имя уже есть
+    const nickname = user.nickname || "";
+    if (!nickname) return;
+    setCurrentPlayer((prev) => ({
+      ...prev,
+      name: nickname,
+    }));
+  }, [user, currentPlayer.name]);
+
   // Маппинг логин -> nickname из users.json
   const loginToNickname = useMemo(() => {
     const m = new Map<string, string>();
@@ -502,15 +514,31 @@ export function App() {
   const isFirstMatchStarted = Date.now() >= FIRST_MATCH.getTime();
 
   const handleSave = async () => {
-    if (!user) return;
-    if (participantSlot < 0) return;
+    if (!user) {
+      console.warn("[SAVE] ❌ Пользователь не авторизован");
+      return;
+    }
+    if (participantSlot < 0) {
+      console.warn("[SAVE] ❌ participantSlot =", participantSlot, "— слот не назначен");
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      return;
+    }
 
     const name = (currentPlayer.name || user.nickname || "").trim();
-    if (!name) return;
+    if (!name) {
+      console.warn("[SAVE] ❌ Имя пустое — currentPlayer.name =", currentPlayer.name, "user.nickname =", user.nickname);
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+      return;
+    }
 
     // Проверка: есть ли хотя бы один счёт
     const hasAnyScore = Object.values(scoreDraft).some((s) => s.h !== "" && s.a !== "");
-    if (!hasAnyScore) return;
+    if (!hasAnyScore) {
+      console.warn("[SAVE] ❌ Нет ни одного заполненного счёта");
+      return;
+    }
 
     // Проверка: если в плей-офф указана ничья, должен быть выбран победитель и способ
     const hasIncompletePlayoffDraws = DEFAULT_MATCHES_LIST
@@ -519,7 +547,12 @@ export function App() {
         const d = scoreDraft[m.id];
         return d && d.h !== "" && d.a !== "" && d.h === d.a && (!d.winner || !d.method);
       });
-    if (hasIncompletePlayoffDraws) return;
+    if (hasIncompletePlayoffDraws) {
+      console.warn("[SAVE] ❌ Есть незавершённые ничьи в плей-офф");
+      return;
+    }
+
+    console.log("[SAVE] ✅ Начинаем сохранение — login:", user.login, "name:", name, "slot:", participantSlot);
 
     // Собираем прогнозы из draft напрямую
     const predsMap = new Map<string, PlayerPrediction>();

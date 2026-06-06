@@ -11,4 +11,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    sourcemap: false, // Строго false для продакшна
+    minify: 'esbuild', // Встроенный минификатор (не требует установки terser)
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor'; // Выносит библиотеки в отдельный кэшируемый файл
+          }
+        }
+      }
+    }
+  }
 });

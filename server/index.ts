@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_MATCHES } from "../src/matches.js";
+import { initDatabase, getPlayer, getResultsFresh, savePlayer, getCacheSize } from "./database.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");
@@ -13,7 +14,6 @@ const USERS_PATH = path.join(__dirname, "..", "src", "users.json");
 await fs.mkdir(DATA_DIR, { recursive: true });
 
 // ---- Каталог матчей (для валидации по matchId) ----
-// Импортируем из src/matches.ts — единый источник правды, отслеживается в git
 interface MatchDef {
   id: string;
   date: string;
@@ -62,14 +62,16 @@ for (const u of registeredUsers) {
       playoff: [],
       topScorer: null,
       medalists: null,
-      updated_at: new Date().toISOString(),
     };
     await fs.writeFile(filePath, JSON.stringify(initial, null, 2), "utf-8");
   }
 }
 
-// Карта логин -> никнейм для быстрого доступа
-const loginToNickname = new Map(registeredUsers.map((u) => [u.login, u.nickname]));
+// ──────────────────────────────────────────────────────────────────
+// 🔥 ПРОГРЕВ ОЗУ: загружаем ВСЕ JSON-файлы в оперативную память
+// После этого все чтения мгновенные (из RAM), записи — асинхронные
+// ──────────────────────────────────────────────────────────────────
+await initDatabase(DATA_DIR);
 
 // ---- end of users.json initialisation ----
 
@@ -104,38 +106,22 @@ function isFirstMatchStarted(): boolean {
   return Date.now() >= FIRST_MATCH_TIME;
 }
 
-// Кэш результатов матчей (хэш-таблица matchId -> {home, away})
-let resultsCache: Record<string, { home: number | null; away: number | null }> | null = null;
-let resultsCacheTime = 0;
-const RESULTS_CACHE_TTL = 5_000; // 5 секунд
-
-async function loadResults(): Promise<Record<string, { home: number | null; away: number | null }>> {
-  const now = Date.now();
-  if (resultsCache && now - resultsCacheTime < RESULTS_CACHE_TTL) {
-    return resultsCache;
+/** Загружает результаты матчей и возвращает Map<matchId, hasResult> (из ОЗУ) */
+async function getMatchResultsMap(): Promise<Map<string, boolean>> {
+  const data = await getResultsFresh();
+  const map = new Map<string, boolean>();
+  for (const [matchId, result] of Object.entries(data)) {
+    map.set(matchId, result.home !== null && result.away !== null);
   }
-  try {
-    const content = await fs.readFile(
-      path.join(DATA_DIR, "results.json"),
-      "utf-8",
-    );
-    resultsCache = JSON.parse(content);
-    resultsCacheTime = now;
-    return resultsCache!;
-  } catch {
-    resultsCache = {};
-    resultsCacheTime = now;
-    return {};
-  }
+  return map;
 }
 
-// GET /api/results — read match results from results.json (хэш-таблица)
+// GET /api/results — результаты матчей из ОЗУ (мгновенно, с автообновлением)
 app.get("/api/results", async (_req, res) => {
-  const data = await loadResults();
-  res.json(data);
+  res.json(await getResultsFresh());
 });
 
-// GET /api/players — list all players from users.json with their saved data
+// GET /api/players — список всех игроков из ОЗУ (мгновенно)
 app.get("/api/players", async (req, res) => {
   const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
   const hasResult = await getMatchResultsMap();
@@ -143,22 +129,16 @@ app.get("/api/players", async (req, res) => {
 
   for (const u of registeredUsers) {
     const login = u.login;
-    const filePath = path.join(DATA_DIR, `${login}.json`);
-    try {
-      const content = await fs.readFile(filePath, "utf-8");
-      const data = JSON.parse(content);
-      if (typeof data === "object" && data !== null && !Array.isArray(data)) {
-        // Нормализуем predictions к хэш-таблице
-        const normalized = normalizePredictions(data as Record<string, unknown>);
-        // Если запросивший пользователь не является владельцем — фильтруем
-        if (!requesterLogin || requesterLogin !== login) {
-          results.push(filterPlayerForNonOwner(normalized, hasResult));
-        } else {
-          results.push(normalized);
-        }
+    const data = await getPlayer(login);
+    if (data) {
+      // Если запросивший пользователь не является владельцем — фильтруем
+      if (!requesterLogin || requesterLogin !== login) {
+        results.push(filterPlayerForNonOwner(data, hasResult));
+      } else {
+        results.push(data);
       }
-    } catch {
-      // Файла нет — добавляем пустой объект для этого пользователя
+    } else {
+      // Данных нет в кэше — добавляем пустой объект
       results.push({
         player: u.nickname,
         login: u.login,
@@ -174,7 +154,7 @@ app.get("/api/players", async (req, res) => {
   res.json(results);
 });
 
-// GET /api/players/:login — load one player by login from users.json
+// GET /api/players/:login — данные одного игрока из ОЗУ (мгновенно)
 app.get("/api/players/:login", async (req, res) => {
   const login = req.params.login.trim().toLowerCase();
   if (!login) {
@@ -193,23 +173,17 @@ app.get("/api/players/:login", async (req, res) => {
   const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
   const isOwner = requesterLogin === login;
 
-  try {
-    const content = await fs.readFile(
-      path.join(DATA_DIR, `${login}.json`),
-      "utf-8",
-    );
-    const data = JSON.parse(content);
-    // Нормализуем predictions к хэш-таблице
-    const normalized = normalizePredictions(data as Record<string, unknown>);
+  const data = await getPlayer(login);
+  if (data) {
     // Если не владелец — фильтруем данные
     if (!isOwner) {
       const hasResult = await getMatchResultsMap();
-      res.json(filterPlayerForNonOwner(normalized, hasResult));
+      res.json(filterPlayerForNonOwner(data, hasResult));
     } else {
-      res.json(normalized);
+      res.json(data);
     }
-  } catch {
-    // Файла нет — возвращаем пустые данные
+  } else {
+    // Данных нет в кэше — возвращаем пустые данные
     res.json({
       player: user.nickname,
       login: user.login,
@@ -222,7 +196,7 @@ app.get("/api/players/:login", async (req, res) => {
   }
 });
 
-// POST /api/players/save — save (create or overwrite) player predictions by login
+// POST /api/players/save — сохранить прогнозы (ОЗУ мгновенно + диск в фоне)
 app.post("/api/players/save", async (req, res) => {
   try {
     const body = req.body as {
@@ -240,6 +214,8 @@ app.post("/api/players/save", async (req, res) => {
       return;
     }
 
+    console.log(`[SAVE-RAW] body keys=${Object.keys(body).join(",")} predictions=${body.predictions ? `object(${Object.keys(body.predictions).length} keys)` : typeof body.predictions} topScorer=${JSON.stringify(body.topScorer)} medalists=${JSON.stringify(body.medalists)} groupStandings=${Array.isArray(body.groupStandings) ? `array(${body.groupStandings.length})` : typeof body.groupStandings} playoff=${Array.isArray(body.playoff) ? `array(${body.playoff.length})` : typeof body.playoff}`);
+
     const login = body.login.trim().toLowerCase();
 
     // Проверяем, что пользователь есть в users.json
@@ -249,20 +225,8 @@ app.post("/api/players/save", async (req, res) => {
       return;
     }
 
-    // Загружаем существующие данные, если есть
-    let existingData: Record<string, unknown> | null = null;
-    try {
-      const existingContent = await fs.readFile(
-        path.join(DATA_DIR, `${login}.json`),
-        "utf-8",
-      );
-      const parsed = JSON.parse(existingContent);
-      if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
-        existingData = normalizePredictions(parsed as Record<string, unknown>);
-      }
-    } catch {
-      // Файла нет — первый раз
-    }
+    // Читаем существующие данные из ОЗУ (мгновенно!)
+    let existingData: Record<string, unknown> | null = await getPlayer(login);
 
     // Собираем существующие прогнозы по matchId для начавшихся матчей
     const existingPredsMap = new Map<string, { home: number; away: number }>();
@@ -281,7 +245,7 @@ app.post("/api/players/save", async (req, res) => {
     let medalists = body.medalists ?? null;
 
     // Если первый матч начался — игнорируем новые значения призёров и бомбардира,
-    // используем существующие из файла (защита от прямых запросов к API)
+    // используем существующие (защита от прямых запросов к API)
     if (isFirstMatchStarted()) {
       topScorer = existingData?.topScorer ?? null;
       medalists = existingData?.medalists ?? null;
@@ -315,7 +279,7 @@ app.post("/api/players/save", async (req, res) => {
       }
     }
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       player: user.nickname,
       login: user.login,
       predictions: validatedPredictions,
@@ -323,20 +287,12 @@ app.post("/api/players/save", async (req, res) => {
       playoff: body.playoff ?? [],
       topScorer,
       medalists,
-      updated_at: new Date().toISOString(),
     };
 
-    try {
-      await fs.writeFile(
-        path.join(DATA_DIR, `${login}.json`),
-        JSON.stringify(payload, null, 2),
-        "utf-8",
-      );
-      res.json({ ok: true });
-    } catch (err) {
-      console.error("Save error:", err);
-      res.status(500).json({ error: "Failed to save" });
-    }
+    // 💾 Сохраняем: ОЗУ мгновенно + диск в фоне (юзер не ждёт!)
+    savePlayer(login, payload);
+    console.log(`[SAVE] login=${login} preds=${Object.keys(validatedPredictions).length} topScorer=${JSON.stringify(topScorer)} medalists=${JSON.stringify(medalists)} groupStandings=${JSON.stringify(body.groupStandings)?.length ?? 0} playoff=${JSON.stringify(body.playoff)?.length ?? 0}`);
+    res.json({ ok: true, saved: { predictions: Object.keys(validatedPredictions).length, topScorer: !!topScorer, medalists: !!medalists } });
   } catch (err) {
     console.error("=== SAVE HANDLER ERROR ===");
     console.error("Message:", err instanceof Error ? err.message : String(err));
@@ -349,35 +305,6 @@ app.post("/api/players/save", async (req, res) => {
     res.status(500).json({ error: "Internal server error", details: err instanceof Error ? err.message : String(err) });
   }
 });
-
-/** Загружает результаты матчей и возвращает Map<matchId, hasResult> (из кэша) */
-async function getMatchResultsMap(): Promise<Map<string, boolean>> {
-  const data = await loadResults();
-  const map = new Map<string, boolean>();
-  for (const [matchId, result] of Object.entries(data)) {
-    map.set(matchId, result.home !== null && result.away !== null);
-  }
-  return map;
-}
-
-/** Нормализует predictions к хэш-таблице (если старый формат — массив) */
-function normalizePredictions(data: Record<string, unknown>): Record<string, unknown> {
-  const result = { ...data };
-  if (Array.isArray(result.predictions)) {
-    const map: Record<string, unknown> = {};
-    for (const p of result.predictions as Array<Record<string, unknown>>) {
-      const matchId = p.matchId as string | undefined;
-      if (matchId) {
-        const entry: Record<string, unknown> = { home: p.home, away: p.away };
-        if (p.winner) entry.winner = p.winner;
-        if (p.method) entry.method = p.method;
-        map[matchId] = entry;
-      }
-    }
-    result.predictions = map;
-  }
-  return result;
-}
 
 /**
  * Фильтрует данные игрока для не-владельца:
@@ -413,6 +340,11 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
 
   return filtered;
 }
+
+// GET /api/health — лёгкий эндпоинт для cron-прогрева (не грузит диск)
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", uptime: Math.round(process.uptime()), playersInCache: getCacheSize() });
+});
 
 app.listen(3001, '127.0.0.1', () => {
   console.log(`Server running on http://localhost:3001`);

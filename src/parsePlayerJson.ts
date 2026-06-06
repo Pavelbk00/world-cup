@@ -9,7 +9,7 @@ import type {
   PlayoffWinMethod,
 } from "./types";
 
-const PLAYER_SLOTS = 6;
+const PLAYER_SLOTS = 20; // Достаточно для любого количества участников турнира
 
 function isRecord(x: unknown): x is Record<string, unknown> {
   return typeof x === "object" && x !== null && !Array.isArray(x);

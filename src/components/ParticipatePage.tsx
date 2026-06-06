@@ -1,7 +1,7 @@
-import { useState } from "react";
 import type { MatchId, MedalistsPrediction, PlayerState, MatchDef, ScoreDraftEntry } from "../types";
 import { DEFAULT_MATCHES_LIST } from "../matches";
 import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "../matchUtils";
+import { getCurrentUser } from "../auth";
 
 /** Парсит "DD.MM.YYYY HH:MM" в число для сравнения */
 function matchDateTimeToMs(dateStr: string, timeStr: string): number {
@@ -71,8 +71,8 @@ export function ParticipatePage({
   /** Проверяет, начался ли первый матч турнира (блокировка выбора призёров и бомбардира) */
   const isFirstMatchStarted = Date.now() >= FIRST_MATCH.getTime();
 
-  // Фиксируем имя при первом рендере, чтобы оно не сбрасывалось после сохранения
-  const [displayName] = useState(player.name);
+  // Имя: приоритет из загруженных данных, fallback на nickname из авторизации
+  const displayName = player.name?.trim() || getCurrentUser()?.nickname || player.login || "";
 
   /** Есть ли хотя бы один заполненный счёт в матчах */
   const hasAnyScore = Object.values(scoreDraft).some((s) => s.h !== "" && s.a !== "");

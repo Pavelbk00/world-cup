@@ -16,7 +16,7 @@ git pull --rebase origin main
 # npm install
 
 echo -e "${GREEN}==> 4. Собираем фронтенд и компилируем бэкенд...${NC}"
-npm run build
+NODE_OPTIONS="--max-old-space-size=512" npm run build
 
 echo -e "${GREEN}==> 5. Мягко перезапускаем бэкенд в PM2 (Zero Downtime)...${NC}"
 pm2 reload lions-game
