@@ -1,6 +1,6 @@
 {
-  "wc-001": { "home": null, "away": null },
-  "wc-002": { "home": null, "away": null },
+  "wc-001": { "home": 2, "away": 0 },
+  "wc-002": { "home": 2, "away": 1 },
   "wc-003": { "home": null, "away": null },
   "wc-004": { "home": null, "away": null },
   "wc-005": { "home": null, "away": null },
