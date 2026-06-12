@@ -1,9 +1,30 @@
 {
   "player": "Роман",
   "login": "roman",
-  "predictions": {},
+  "predictions": {
+    "wc-001": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-002": {
+      "home": 1,
+      "away": 1
+    },
+    "wc-007": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-019": {
+      "home": 2,
+      "away": 0
+    }
+  },
   "groupStandings": [],
   "playoff": [],
-  "topScorer": null,
-  "medalists": null
+  "topScorer": "Килиан Мбаппе",
+  "medalists": {
+    "gold": "Франция",
+    "silver": "Англия",
+    "bronze": "Испания"
+  }
 }

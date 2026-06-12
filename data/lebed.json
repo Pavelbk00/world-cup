@@ -293,6 +293,10 @@
   },
   "groupStandings": [],
   "playoff": [],
-  "topScorer": null,
-  "medalists": null
+  "topScorer": "Мбаппе",
+  "medalists": {
+    "gold": "Франция",
+    "silver": "Бразилия",
+    "bronze": "Португалия"
+  }
 }
