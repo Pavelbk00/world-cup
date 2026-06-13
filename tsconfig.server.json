@@ -11,5 +11,5 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "include": ["server", "src/matches.ts", "src/types.ts"]
+  "include": ["server", "scripts", "src/matches.ts", "src/types.ts"]
 }
