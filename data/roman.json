@@ -14,9 +14,41 @@
       "home": 2,
       "away": 1
     },
+    "wc-008": {
+      "home": 0,
+      "away": 2
+    },
+    "wc-013": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-014": {
+      "home": 0,
+      "away": 2
+    },
     "wc-019": {
       "home": 2,
       "away": 0
+    },
+    "wc-020": {
+      "home": 1,
+      "away": 3
+    },
+    "wc-025": {
+      "home": 1,
+      "away": 1
+    },
+    "wc-026": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-031": {
+      "home": 4,
+      "away": 0
+    },
+    "wc-032": {
+      "home": 1,
+      "away": 1
     }
   },
   "groupStandings": [],
