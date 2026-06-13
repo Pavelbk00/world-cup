@@ -42,7 +42,7 @@ async function main() {
   console.log("⚽ Загрузка результатов матчей ЧМ 2026\n");
   console.log("📋 Источник: football-data.org (бесплатный API)\n");
 
-  const r = await fetchAndSaveResults(apiKey);
+  const r = await fetchAndSaveResults(apiKey as string);
 
   if (r.updated > 0) {
     console.log("🔄 Обновлённые результаты:");
