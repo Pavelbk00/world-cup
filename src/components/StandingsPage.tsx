@@ -30,7 +30,7 @@ export function StandingsPage({
             <tr>
               <th style={{textAlign: 'left'}}>#</th>
               <th style={{textAlign: 'left'}}>Игрок</th>
-              <th className="num">Счёт (3)</th>
+              <th className="num">Точный счёт (3)</th>
               <th className="num">Разница (2)</th>
               <th className="num">Исход (1)</th>
               <th className="num">Группы</th>

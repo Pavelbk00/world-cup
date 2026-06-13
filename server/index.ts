@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_MATCHES } from "../src/matches.js";
 import { initDatabase, getPlayer, getResultsFresh, savePlayer, getCacheSize } from "./database.js";
+import { fetchAndSaveResults } from "./auto-fetch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");
@@ -345,6 +346,101 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", uptime: Math.round(process.uptime()), playersInCache: getCacheSize() });
 });
+
+// ──────────────────────────────────────────────────────────────────
+// 🤖 АВТОЗАПУСК: планирует запрос результатов после окончания
+// каждого матча (время старта + 2 часа). Один запрос на матч.
+// ──────────────────────────────────────────────────────────────────
+
+const ENV_PATH = path.join(__dirname, "..", ".env");
+
+async function loadApiKey(): Promise<string | null> {
+  if (process.env.FOOTBALL_DATA_KEY) return process.env.FOOTBALL_DATA_KEY;
+  try {
+    const envContent = await fs.readFile(ENV_PATH, "utf-8");
+    const match = envContent.match(/FOOTBALL_DATA_KEY=(.+)/);
+    if (match?.[1]?.trim()) return match[1].trim();
+  } catch { /* .env нет */ }
+  return null;
+}
+
+async function scheduleAutoFetch() {
+  const _key = await loadApiKey();
+  if (!_key) {
+    console.log("🤖 Автозапуск: нет FOOTBALL_DATA_KEY, пропускаем");
+    return;
+  }
+  const key: string = _key;
+
+  // Читаем текущие результаты
+  const resultsData = JSON.parse(
+    await fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8")
+  ) as Record<string, { home: number | null; away: number | null }>;
+
+  const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 часа после старта
+  const RETRY_DELAY_MS = 10 * 60 * 1000; // повтор через 10 мин, если результата ещё нет
+  const now = Date.now();
+  let scheduled = 0;
+  let immediate = 0;
+
+  for (const [matchId, match] of Object.entries(matchesCatalog)) {
+    if (match.isPlaceholder) continue;
+
+    // Если результат уже есть — пропускаем
+    if (resultsData[matchId]?.home !== null && resultsData[matchId]?.away !== null) continue;
+
+    const matchTime = parseMatchDateTime(match.date, match.time);
+    if (!matchTime) continue;
+
+    const fetchAt = matchTime.getTime() + MATCH_DURATION_MS;
+
+    function scheduleFetch(at: number) {
+      const delay = at - now;
+      if (delay <= 0) {
+        // Время уже прошло — запускаем сразу
+        immediate++;
+        setTimeout(() => doFetch(matchId, match.homeTeam, match.awayTeam, key), 0);
+      } else {
+        // Планируем на точное время
+        scheduled++;
+        const mins = Math.round(delay / 60_000);
+        console.log(`   ⏰ ${matchId} ${match.homeTeam} vs ${match.awayTeam} → через ${mins} мин`);
+        setTimeout(() => doFetch(matchId, match.homeTeam, match.awayTeam, key), delay);
+      }
+    }
+
+    scheduleFetch(fetchAt);
+  }
+
+  if (scheduled > 0 || immediate > 0) {
+    console.log(`🤖 Автозапуск: ${scheduled} запланировано, ${immediate} немедленно`);
+  } else {
+    console.log("🤖 Автозапуск: все результаты на месте, нечего планировать");
+  }
+
+  async function doFetch(matchId: string, home: string, away: string, key: string) {
+    try {
+      console.log(`🤖 Запрос результатов (${home} vs ${away})...`);
+      const r = await fetchAndSaveResults(key);
+
+      if (r.updated > 0) {
+        for (const m of r.updatedMatches) {
+          console.log(`   🔄 ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`);
+        }
+      } else {
+        // Результата ещё нет — повторим через 10 минут
+        console.log(`   ⏳ Результата ${matchId} ещё нет в API, повтор через 10 мин`);
+        setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
+      }
+    } catch (err) {
+      console.error(`🤖 Ошибка ${matchId}:`, err instanceof Error ? err.message : err);
+      // Повторим через 10 минут при ошибке
+      setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
+    }
+  }
+}
+
+scheduleAutoFetch();
 
 app.listen(3001, '127.0.0.1', () => {
   console.log(`Server running on http://localhost:3001`);
