@@ -24,12 +24,12 @@
     "away": null
   },
   "wc-007": {
-    "home": 1,
-    "away": 1
-  },
-  "wc-008": {
     "home": null,
     "away": null
+  },
+  "wc-008": {
+    "home": 1,
+    "away": 1
   },
   "wc-009": {
     "home": null,
@@ -48,12 +48,12 @@
     "away": null
   },
   "wc-013": {
-    "home": null,
-    "away": null
+    "home": 1,
+    "away": 1
   },
   "wc-014": {
-    "home": null,
-    "away": null
+    "home": 0,
+    "away": 1
   },
   "wc-015": {
     "home": null,
@@ -76,8 +76,8 @@
     "away": 1
   },
   "wc-020": {
-    "home": null,
-    "away": null
+    "home": 2,
+    "away": 0
   },
   "wc-021": {
     "home": null,
@@ -96,12 +96,12 @@
     "away": null
   },
   "wc-025": {
-    "home": null,
-    "away": null
+    "home": 2,
+    "away": 2
   },
   "wc-026": {
-    "home": null,
-    "away": null
+    "home": 5,
+    "away": 1
   },
   "wc-027": {
     "home": null,
@@ -120,12 +120,12 @@
     "away": null
   },
   "wc-031": {
-    "home": 5,
-    "away": null
+    "home": 7,
+    "away": 1
   },
   "wc-032": {
-    "home": null,
-    "away": null
+    "home": 1,
+    "away": 0
   },
   "wc-033": {
     "home": null,
