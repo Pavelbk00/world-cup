@@ -137,6 +137,39 @@ export async function loadMatchResults(): Promise<MatchResultMap> {
   }
 }
 
+export interface PointsHistoryEntry {
+  player: string;
+  login: string;
+  predHome: number;
+  predAway: number;
+  points: number;
+}
+
+export interface PointsHistoryRow {
+  matchId: string;
+  homeTeam: string;
+  awayTeam: string;
+  date: string;
+  time: string;
+  phase: string;
+  actualHome: number;
+  actualAway: number;
+  entries: PointsHistoryEntry[];
+}
+
+/** Load points history from the server. */
+export async function loadPointsHistory(): Promise<PointsHistoryRow[]> {
+  try {
+    const res = await fetch(`${API_BASE}/points-history`, {
+      headers: authHeaders(),
+    });
+    if (!res.ok) return [];
+    return (await res.json()) as PointsHistoryRow[];
+  } catch {
+    return [];
+  }
+}
+
 /** Check if the server is reachable. */
 export async function isServerReachable(): Promise<boolean> {
   try {

@@ -29,7 +29,10 @@ export function PlayerMatchesPage({
   matches,
   currentUserLogin,
 }: PlayerMatchesPageProps) {
-  const isOwner = selectedPlayer.login === currentUserLogin;
+  // Пашок видит все прогнозы без ограничений
+  const isPavel = currentUserLogin === "pavel";
+  const isOwner = selectedPlayer.login === currentUserLogin || isPavel;
+  const canSeeAll = isOwner || isPavel;
 
   const playerMatches: PlayerMatchRow[] = useMemo(() => {
     const rows = matches.map((m) => {
@@ -57,7 +60,7 @@ export function PlayerMatchesPage({
     <section className="panel player-matches-section">
       <div className="panel-head">
         <h2>Прогнозы: {selectedPlayer.name}</h2>
-        {!isOwner && (
+        {!canSeeAll && (
           <p className="hint privacy-notice">
             🔒 Прогнозы на матчи без результата скрыты
           </p>
@@ -91,7 +94,7 @@ export function PlayerMatchesPage({
                   </div>
                 </td>
                 <td className="num">
-                  {isOwner || actual
+                  {canSeeAll || actual
                     ? pred
                       ? `${pred.home}:${pred.away}`
                       : "—"

@@ -25,6 +25,7 @@ import {
   LoginPage,
   ParticipatePage,
   HallOfFamePage,
+  PointsHistory,
 } from "./components";
 
 // Utils
@@ -808,11 +809,14 @@ export function App() {
             saveStatus={saveStatus}
           />
         ) : page === "standings" ? (
-          <StandingsPage
-            standingsByPlayerId={standingsByPlayerId}
-            lastFinishedMatchLabel={lastFinishedMatchLabel}
-            onSelectPlayer={setSelectedPlayerId}
-          />
+          <>
+            <StandingsPage
+              standingsByPlayerId={standingsByPlayerId}
+              lastFinishedMatchLabel={lastFinishedMatchLabel}
+              onSelectPlayer={setSelectedPlayerId}
+            />
+            <PointsHistory currentUserLogin={user?.login} />
+          </>
         ) : (
           <WelcomePage
             onParticipate={handleParticipateClick}

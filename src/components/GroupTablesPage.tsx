@@ -310,7 +310,8 @@ export function GroupTablesPage({
   currentUserLogin,
 }: GroupTablesPageProps) {
   const groupStageDone = isGroupStageFinished(matches);
-  const isOwner = selectedPlayer?.login === currentUserLogin;
+  const isPavel = currentUserLogin === "pavel";
+  const isOwner = selectedPlayer?.login === currentUserLogin || isPavel;
   const actualTables = buildActualGroupTables(matches);
   const groupPoints = selectedPlayer
     ? computeGroupPoints(selectedPlayer, actualTables)

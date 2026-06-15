@@ -6,3 +6,4 @@ export { GroupTablesPage, type GroupTableRow } from "./GroupTablesPage";
 export { ParticipatePage } from "./ParticipatePage";
 export { LoginPage } from "./LoginPage";
 export { HallOfFamePage } from "./HallOfFamePage";
+export { PointsHistory } from "./PointsHistory";

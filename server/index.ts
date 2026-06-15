@@ -133,7 +133,8 @@ app.get("/api/players", async (req, res) => {
     const data = await getPlayer(login);
     if (data) {
       // Если запросивший пользователь не является владельцем — фильтруем
-      if (!requesterLogin || requesterLogin !== login) {
+      // (Пашок видит все прогнозы без фильтрации)
+      if (!requesterLogin || (requesterLogin !== login && requesterLogin !== "pavel")) {
         results.push(filterPlayerForNonOwner(data, hasResult));
       } else {
         results.push(data);
@@ -177,7 +178,8 @@ app.get("/api/players/:login", async (req, res) => {
   const data = await getPlayer(login);
   if (data) {
     // Если не владелец — фильтруем данные
-    if (!isOwner) {
+    // (Пашок видит все прогнозы без фильтрации)
+    if (!isOwner && requesterLogin !== "pavel") {
       const hasResult = await getMatchResultsMap();
       res.json(filterPlayerForNonOwner(data, hasResult));
     } else {
@@ -342,6 +344,101 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
   return filtered;
 }
 
+// GET /api/points-history — история начисления очков по матчам
+app.get("/api/points-history", async (_req, res) => {
+  const resultsData = await getResultsFresh();
+  const allPlayers: Array<{ login: string; nickname: string; predictions: Record<string, { home: number; away: number }> }> = [];
+
+  for (const u of registeredUsers) {
+    const data = await getPlayer(u.login);
+    if (!data) continue;
+    const preds = data.predictions as Record<string, { home: number; away: number }> | undefined;
+    allPlayers.push({ login: u.login, nickname: u.nickname, predictions: preds ?? {} });
+  }
+
+  type HistoryRow = {
+    matchId: string;
+    homeTeam: string;
+    awayTeam: string;
+    date: string;
+    time: string;
+    phase: string;
+    actualHome: number;
+    actualAway: number;
+    entries: Array<{
+      player: string;
+      login: string;
+      predHome: number;
+      predAway: number;
+      points: number;
+    }>;
+  };
+
+  const history: HistoryRow[] = [];
+
+  for (const [matchId, matchDef] of Object.entries(matchesCatalog)) {
+    if (matchDef.isPlaceholder) continue;
+    const result = resultsData[matchId];
+    if (!result || result.home === null || result.away === null) continue;
+
+    const entries: HistoryRow["entries"] = [];
+    for (const p of allPlayers) {
+      const pred = p.predictions[matchId];
+      if (!pred) continue;
+
+
+      const sameOutcome =
+        (pred.home > pred.away && result.home > result.away) ||
+        (pred.home < pred.away && result.home < result.away) ||
+        (pred.home === pred.away && result.home === result.away);
+      const sameDiff = pred.home - pred.away === result.home - result.away;
+      const exact = pred.home === result.home && pred.away === result.away;
+
+      let points = 0;
+      if (sameOutcome) points += 1;
+      if (sameDiff) points += 2;
+      if (exact) points += 3;
+
+      if (points > 0) {
+        entries.push({
+          player: p.nickname,
+          login: p.login,
+          predHome: pred.home,
+          predAway: pred.away,
+          points,
+        });
+      }
+    }
+
+    // Сухие матчи — все 0 очков — пропускаем
+    if (entries.length === 0) continue;
+
+    // Сортируем по очкам (убывание), потом по имени
+    entries.sort((a, b) => b.points - a.points || a.player.localeCompare(b.player, "ru"));
+
+    history.push({
+      matchId,
+      homeTeam: matchDef.homeTeam,
+      awayTeam: matchDef.awayTeam,
+      date: matchDef.date,
+      time: matchDef.time,
+      phase: matchDef.phase,
+      actualHome: result.home,
+      actualAway: result.away,
+      entries,
+    });
+  }
+
+  // Сортируем по дате/времени (свежие сверху)
+  history.sort((a, b) => {
+    const aMs = parseMatchDateTime(a.date, a.time)?.getTime() ?? 0;
+    const bMs = parseMatchDateTime(b.date, b.time)?.getTime() ?? 0;
+    return bMs - aMs;
+  });
+
+  res.json(history);
+});
+
 // GET /api/health — лёгкий эндпоинт для cron-прогрева (не грузит диск)
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", uptime: Math.round(process.uptime()), playersInCache: getCacheSize() });
@@ -378,7 +475,7 @@ async function scheduleAutoFetch() {
   ) as Record<string, { home: number | null; away: number | null }>;
 
   const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 часа после старта
-  const RETRY_DELAY_MS = 10 * 60 * 1000; // повтор через 10 мин, если результата ещё нет
+  const RETRY_DELAY_MS = 5 * 60 * 1000; // повтор через 5 мин, если результата ещё нет
   const now = Date.now();
   let scheduled = 0;
   let immediate = 0;
