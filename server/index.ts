@@ -480,6 +480,15 @@ async function scheduleAutoFetch() {
   let scheduled = 0;
   let immediate = 0;
 
+  // Множество матчей, для которых уже запущен fetch (чтобы не дублировать)
+  const fetching = new Set<string>();
+
+  function tryFetchMatch(matchId: string, home: string, away: string) {
+    if (fetching.has(matchId)) return;
+    fetching.add(matchId);
+    doFetch(matchId, home, away, key);
+  }
+
   for (const [matchId, match] of Object.entries(matchesCatalog)) {
     if (match.isPlaceholder) continue;
 
@@ -490,23 +499,19 @@ async function scheduleAutoFetch() {
     if (!matchTime) continue;
 
     const fetchAt = matchTime.getTime() + MATCH_DURATION_MS;
+    const delay = fetchAt - now;
 
-    function scheduleFetch(at: number) {
-      const delay = at - now;
-      if (delay <= 0) {
-        // Время уже прошло — запускаем сразу
-        immediate++;
-        setTimeout(() => doFetch(matchId, match.homeTeam, match.awayTeam, key), 0);
-      } else {
-        // Планируем на точное время
-        scheduled++;
-        const mins = Math.round(delay / 60_000);
-        console.log(`   ⏰ ${matchId} ${match.homeTeam} vs ${match.awayTeam} → через ${mins} мин`);
-        setTimeout(() => doFetch(matchId, match.homeTeam, match.awayTeam, key), delay);
-      }
+    if (delay <= 0) {
+      // Время уже прошло — запускаем сразу
+      immediate++;
+      tryFetchMatch(matchId, match.homeTeam, match.awayTeam);
+    } else {
+      // Планируем на точное время
+      scheduled++;
+      const mins = Math.round(delay / 60_000);
+      console.log(`   ⏰ ${matchId} ${match.homeTeam} vs ${match.awayTeam} → через ${mins} мин`);
+      setTimeout(() => tryFetchMatch(matchId, match.homeTeam, match.awayTeam), delay);
     }
-
-    scheduleFetch(fetchAt);
   }
 
   if (scheduled > 0 || immediate > 0) {
@@ -514,6 +519,37 @@ async function scheduleAutoFetch() {
   } else {
     console.log("🤖 Автозапуск: все результаты на месте, нечего планировать");
   }
+
+  // ── Периодический catch-up: каждые 5 мин ищет пропущенные матчи ──
+  // Защищает от ситуации, когда сервер перезапустился и все setTimeout потерялись.
+  const CATCHUP_INTERVAL_MS = 5 * 60 * 1000;
+  setInterval(() => {
+    fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8")
+      .then((raw) => {
+        const current = JSON.parse(raw) as Record<string, { home: number | null; away: number | null }>;
+        const nowInner = Date.now();
+        let caught = 0;
+
+        for (const [matchId, match] of Object.entries(matchesCatalog)) {
+          if (match.isPlaceholder) continue;
+          if (fetching.has(matchId)) continue; // Уже ждём ответ от API
+          if (current[matchId]?.home !== null && current[matchId]?.away !== null) continue;
+
+          const matchTime = parseMatchDateTime(match.date, match.time);
+          if (!matchTime) continue;
+
+          if (nowInner >= matchTime.getTime() + MATCH_DURATION_MS) {
+            caught++;
+            tryFetchMatch(matchId, match.homeTeam, match.awayTeam);
+          }
+        }
+
+        if (caught > 0) {
+          console.log(`🤖 Catch-up: ${caught} матчей без результата, запускаем fetch`);
+        }
+      })
+      .catch(() => { /* ignore — проверим на следующей итерации */ });
+  }, CATCHUP_INTERVAL_MS);
 
   async function doFetch(matchId: string, home: string, away: string, key: string) {
     try {
@@ -524,14 +560,15 @@ async function scheduleAutoFetch() {
         for (const m of r.updatedMatches) {
           console.log(`   🔄 ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`);
         }
+        fetching.delete(matchId); // Результат получен — освобождаем слот
       } else {
-        // Результата ещё нет — повторим через 10 минут
-        console.log(`   ⏳ Результата ${matchId} ещё нет в API, повтор через 10 мин`);
+        // Результата ещё нет — повторим через 5 мин
+        console.log(`   ⏳ Результата ${matchId} ещё нет в API, повтор через 5 мин`);
         setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
       }
     } catch (err) {
       console.error(`🤖 Ошибка ${matchId}:`, err instanceof Error ? err.message : err);
-      // Повторим через 10 минут при ошибке
+      // Повторим через 5 мин при ошибке
       setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
     }
   }
