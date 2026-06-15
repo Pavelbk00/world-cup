@@ -42,7 +42,7 @@ const TEAM_NAME_MAP: Record<string, string[]> = {
   "Кот-д'Ивуар": ["Ivory Coast", "Cote d'Ivoire", "Côte d'Ivoire"],
   "Эквадор": ["Ecuador"],
   "Испания": ["Spain"],
-  "Кабо-Верде": ["Cape Verde"],
+  "Кабо-Верде": ["Cape Verde", "Cape Verde Islands"],
   "Саудовская Аравия": ["Saudi Arabia"],
   "Уругвай": ["Uruguay"],
   "Бельгия": ["Belgium"],

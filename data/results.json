@@ -24,8 +24,8 @@
     "away": null
   },
   "wc-007": {
-    "home": null,
-    "away": null
+    "home": 1,
+    "away": 1
   },
   "wc-008": {
     "home": 1,
@@ -144,8 +144,8 @@
     "away": null
   },
   "wc-037": {
-    "home": null,
-    "away": null
+    "home": 0,
+    "away": 0
   },
   "wc-038": {
     "home": null,
