@@ -102,8 +102,10 @@ export async function loadAllPlayers(): Promise<PlayerState[]> {
   }
 }
 
-/** Save (create or overwrite) a player's predictions on the server. */
-export async function savePlayer(player: PlayerState, login: string): Promise<boolean> {
+/** Save (create or overwrite) a player's predictions on the server.
+ *  Возвращает реально сохранённые данные с сервера (прогнозы на начавшиеся
+ *  матчи могут быть заменены сервером на существующие). */
+export async function savePlayer(player: PlayerState, login: string): Promise<PlayerState | null> {
   const data = buildExport(player, login);
 
   try {
@@ -114,11 +116,20 @@ export async function savePlayer(player: PlayerState, login: string): Promise<bo
     });
     if (!res.ok) {
       console.error("[API] savePlayer failed:", res.status, await res.text().catch(() => ""));
+      return null;
     }
-    return res.ok;
+    const json = (await res.json()) as { ok: boolean; data?: ExportShape };
+    if (json.ok && json.data) {
+      return exportShapeToPlayerState(json.data);
+    }
+    // Фоллбэк: сервер вернул ok без data (старый формат) — используем отправленные данные
+    return {
+      ...player,
+      predictions: new Map(player.predictions),
+    };
   } catch (err) {
     console.error("[API] savePlayer network error:", err);
-    return false;
+    return null;
   }
 }
 

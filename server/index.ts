@@ -295,7 +295,7 @@ app.post("/api/players/save", async (req, res) => {
     // 💾 Сохраняем: ОЗУ мгновенно + диск в фоне (юзер не ждёт!)
     savePlayer(login, payload);
     console.log(`[SAVE] login=${login} preds=${Object.keys(validatedPredictions).length} topScorer=${JSON.stringify(topScorer)} medalists=${JSON.stringify(medalists)} groupStandings=${JSON.stringify(body.groupStandings)?.length ?? 0} playoff=${JSON.stringify(body.playoff)?.length ?? 0}`);
-    res.json({ ok: true, saved: { predictions: Object.keys(validatedPredictions).length, topScorer: !!topScorer, medalists: !!medalists } });
+    res.json({ ok: true, data: payload });
   } catch (err) {
     console.error("=== SAVE HANDLER ERROR ===");
     console.error("Message:", err instanceof Error ? err.message : String(err));

@@ -591,20 +591,33 @@ export function App() {
       parseError: null,
     };
     setSaveStatus("saving");
-    const ok = await savePlayer(updated, user.login);
-    if (ok) {
+    const saved = await savePlayer(updated, user.login);
+    if (saved) {
       setSaveStatus("saved");
-      // Force set currentPlayer with updated predictions
-      setCurrentPlayer({
-        ...updated,
-        predictions: new Map(updated.predictions),
-      });
+      // Используем реальные данные с сервера (прогнозы на начавшиеся матчи
+      // могли быть заменены сервером на существующие)
+      const serverPlayer: PlayerState = {
+        id: currentPlayer.id,
+        login: saved.login,
+        name: saved.name,
+        predictions: saved.predictions,
+        groupStandings: saved.groupStandings,
+        topScorer: saved.topScorer,
+        medalists: saved.medalists,
+        rawJson: updated.rawJson,
+        parseError: null,
+      };
+      setCurrentPlayer(serverPlayer);
+      setScoreDraft(
+        draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, serverPlayer.predictions),
+      );
+      setMedalistsDraft(
+        serverPlayer.medalists ?? { gold: "", silver: "", bronze: "" },
+      );
+      setTopScorerDraft(serverPlayer.topScorer ?? "");
       setPlayers((prev) => {
         const next = [...prev];
-        next[participantSlot] = {
-          ...updated,
-          predictions: new Map(updated.predictions),
-        };
+        next[participantSlot] = serverPlayer;
         return next;
       });
       // Reset status after 2s
