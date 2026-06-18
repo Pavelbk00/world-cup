@@ -169,9 +169,10 @@ export interface PointsHistoryRow {
 }
 
 /** Load points history from the server. */
-export async function loadPointsHistory(): Promise<PointsHistoryRow[]> {
+export async function loadPointsHistory(includeZero = false): Promise<PointsHistoryRow[]> {
   try {
-    const res = await fetch(`${API_BASE}/points-history`);
+    const url = includeZero ? `${API_BASE}/points-history?includeZero=1` : `${API_BASE}/points-history`;
+    const res = await fetch(url);
     if (!res.ok) return [];
     return (await res.json()) as PointsHistoryRow[];
   } catch {

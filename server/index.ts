@@ -345,7 +345,9 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
 }
 
 // GET /api/points-history — история начисления очков по матчам
-app.get("/api/points-history", async (_req, res) => {
+// ?includeZero=1 — включать записи с 0 очков и матчи, где все набрали 0
+app.get("/api/points-history", async (req, res) => {
+  const includeZero = req.query.includeZero === "1";
   const resultsData = await getResultsFresh();
   const allPlayers: Array<{ login: string; nickname: string; predictions: Record<string, { home: number; away: number }> }> = [];
 
@@ -399,7 +401,7 @@ app.get("/api/points-history", async (_req, res) => {
       if (sameDiff) points += 2;
       if (exact) points += 3;
 
-      if (points > 0) {
+      if (points > 0 || includeZero) {
         entries.push({
           player: p.nickname,
           login: p.login,
@@ -410,8 +412,8 @@ app.get("/api/points-history", async (_req, res) => {
       }
     }
 
-    // Сухие матчи — все 0 очков — пропускаем
-    if (entries.length === 0) continue;
+    // Сухие матчи — все 0 очков — пропускаем (если не включён режим "все")
+    if (!includeZero && entries.length === 0) continue;
 
     // Сортируем по очкам (убывание), потом по имени
     entries.sort((a, b) => b.points - a.points || a.player.localeCompare(b.player, "ru"));

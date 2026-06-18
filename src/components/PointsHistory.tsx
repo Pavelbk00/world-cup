@@ -9,14 +9,15 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
   const [history, setHistory] = useState<PointsHistoryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [includeZero, setIncludeZero] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const data = await loadPointsHistory();
+      const data = await loadPointsHistory(includeZero);
       setHistory(data);
       setLoading(false);
     })();
-  }, []);
+  }, [includeZero]);
 
   const displayedHistory = onlyMine && currentUserLogin
     ? history.map((row) => ({
@@ -53,16 +54,26 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
     <section className="panel points-history-section">
       <div className="panel-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
         <h2 style={{ margin: 0 }}>История начислений</h2>
-        {currentUserLogin && (
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           <button
             type="button"
-            className={`btn ${onlyMine ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setOnlyMine((v) => !v)}
+            className={`btn ${includeZero ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setIncludeZero((v) => !v)}
             style={{ fontSize: "0.85rem", padding: "0.35rem 0.9rem" }}
           >
-            {onlyMine ? "Все игроки" : "Только мои"}
+            {includeZero ? "Только успешные" : "Все результаты"}
           </button>
-        )}
+          {currentUserLogin && (
+            <button
+              type="button"
+              className={`btn ${onlyMine ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setOnlyMine((v) => !v)}
+              style={{ fontSize: "0.85rem", padding: "0.35rem 0.9rem" }}
+            >
+              {onlyMine ? "Все игроки" : "Только мои"}
+            </button>
+          )}
+        </div>
       </div>
       {displayedHistory.length === 0 ? (
         <p className="hint" style={{ textAlign: "center", marginTop: "2rem" }}>
@@ -94,7 +105,7 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                       прогноз {e.predHome}:{e.predAway}
                     </span>
                     <span className={`ph-entry-pts ph-pts-${e.points}`}>
-                      +{e.points}
+                      {e.points ? `+${e.points}` : e.points}
                     </span>
                   </div>
                 ))}
