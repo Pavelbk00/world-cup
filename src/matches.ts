@@ -23,7 +23,7 @@ export const DEFAULT_MATCHES: Record<string, MatchDef> = {
   },
   "wc-003": {
     id: "wc-003",
-    date: "19.06.2026",
+    date: "18.06.2026",
     time: "19:00",
     homeTeam: "Чехия",
     awayTeam: "ЮАР",
@@ -130,7 +130,7 @@ export const DEFAULT_MATCHES: Record<string, MatchDef> = {
   "wc-016": {
     id: "wc-016",
     date: "20.06.2026",
-    time: "04:00",
+    time: "03:30",
     homeTeam: "Бразилия",
     awayTeam: "Гаити",
     phase: "Группа C",
@@ -179,7 +179,7 @@ export const DEFAULT_MATCHES: Record<string, MatchDef> = {
   "wc-022": {
     id: "wc-022",
     date: "20.06.2026",
-    time: "07:00",
+    time: "06:00",
     homeTeam: "Турция",
     awayTeam: "Парагвай",
     phase: "Группа D",
