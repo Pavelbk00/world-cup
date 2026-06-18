@@ -10,6 +10,10 @@
       "home": 1,
       "away": 1
     },
+    "wc-003": {
+      "home": 1,
+      "away": 0
+    },
     "wc-007": {
       "home": 2,
       "away": 1
@@ -17,6 +21,10 @@
     "wc-008": {
       "home": 0,
       "away": 2
+    },
+    "wc-009": {
+      "home": 2,
+      "away": 0
     },
     "wc-013": {
       "home": 2,
@@ -81,6 +89,22 @@
     "wc-056": {
       "home": 2,
       "away": 0
+    },
+    "wc-061": {
+      "home": 1,
+      "away": 0
+    },
+    "wc-062": {
+      "home": 0,
+      "away": 0
+    },
+    "wc-067": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-068": {
+      "home": 0,
+      "away": 1
     }
   },
   "groupStandings": [],
