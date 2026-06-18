@@ -2124,6 +2124,21 @@ margin: 0;
   color: #f97316;
 }
 
+.ph-head {
+  align-items: center;
+}
+
+.ph-head-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ph-btn {
+  font-size: 0.85rem;
+  padding: 0.35rem 0.9rem;
+}
+
 @media (max-width: 600px) {
   .ph-card-teams {
     font-size: 0.82rem;
@@ -2132,5 +2147,21 @@ margin: 0;
     grid-template-columns: 1fr 1fr 80px;
     padding: 0.65rem 0.65rem;
     font-size: 0.8rem;
+  }
+
+  .points-history-section .panel-head {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+  }
+
+  .points-history-section .ph-head-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .points-history-section .ph-head-actions .ph-btn {
+    width: 100%;
+    box-sizing: border-box;
   }
 }

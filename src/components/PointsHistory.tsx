@@ -52,23 +52,21 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
 
   return (
     <section className="panel points-history-section">
-      <div className="panel-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem" }}>
-        <h2 style={{ margin: 0 }}>История начислений</h2>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+      <div className="panel-head ph-head">
+        <h2>История начислений</h2>
+        <div className="ph-head-actions">
           <button
             type="button"
-            className={`btn ${includeZero ? "btn-primary" : "btn-secondary"}`}
+            className={`btn ph-btn ${includeZero ? "btn-primary" : "btn-secondary"}`}
             onClick={() => setIncludeZero((v) => !v)}
-            style={{ fontSize: "0.85rem", padding: "0.35rem 0.9rem" }}
           >
             {includeZero ? "Только успешные" : "Все результаты"}
           </button>
           {currentUserLogin && (
             <button
               type="button"
-              className={`btn ${onlyMine ? "btn-primary" : "btn-secondary"}`}
+              className={`btn ph-btn ${onlyMine ? "btn-primary" : "btn-secondary"}`}
               onClick={() => setOnlyMine((v) => !v)}
-              style={{ fontSize: "0.85rem", padding: "0.35rem 0.9rem" }}
             >
               {onlyMine ? "Все игроки" : "Только мои"}
             </button>
