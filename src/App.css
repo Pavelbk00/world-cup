@@ -883,6 +883,7 @@ code.inline {
     4px 0 30px rgba(2, 23, 14, 0.5),
     inset -1px 0 0 rgba(74, 222, 128, 0.04),
     var(--shadow-soft);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   z-index: 100;
   overflow-y: auto;
@@ -1278,6 +1279,7 @@ code.inline {
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -1669,7 +1671,7 @@ code.inline {
   display: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 760px), (hover: none) {
   .app {
     flex-direction: column;
   }
@@ -1678,14 +1680,12 @@ code.inline {
     position: sticky;
     top: 0;
     width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
     padding: 0.5rem 0.75rem;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
     border-right: none;
     border-bottom: 1px solid var(--border);
     z-index: 100;
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
   }
 
   .sidebar-badge {
@@ -1698,6 +1698,9 @@ code.inline {
     align-items: stretch;
     width: 100%;
     flex: 1 1 auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
   }
 
   .sidebar-btn {
@@ -1900,7 +1903,7 @@ code.inline {
 }
 
 /* Small phones */
-@media (max-width: 420px) {
+@media (max-width: 420px), (max-height: 500px) and (hover: none) {
   .sidebar {
     padding: 0.4rem 0.5rem;
   }
@@ -2139,7 +2142,7 @@ margin: 0;
   padding: 0.35rem 0.9rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px), (hover: none) {
   .ph-card-teams {
     font-size: 0.82rem;
   }

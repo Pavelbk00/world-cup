@@ -11,60 +11,61 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, "..", "data");
 const RESULTS_PATH = path.join(DATA_DIR, "results.json");
 const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
+const OVERRIDES_PATH = path.join(DATA_DIR, "overrides.json");
 
 const API_BASE = "https://api.football-data.org/v4";
 
 // ─── Маппинг названий команд: русское → английские варианты из API ─
 
 const TEAM_NAME_MAP: Record<string, string[]> = {
-  "Мексика": ["Mexico"],
-  "ЮАР": ["South Africa"],
+  Мексика: ["Mexico"],
+  ЮАР: ["South Africa"],
   "Южная Корея": ["Korea Republic", "South Korea"],
-  "Чехия": ["Czech Republic", "Czechia"],
-  "Канада": ["Canada"],
-  "Босния": ["Bosnia and Herzegovina", "Bosnia", "Bosnia-Herzegovina"],
-  "Катар": ["Qatar"],
-  "Швейцария": ["Switzerland"],
-  "Бразилия": ["Brazil"],
-  "Марокко": ["Morocco"],
-  "Гаити": ["Haiti"],
-  "Шотландия": ["Scotland"],
-  "США": ["USA", "United States"],
-  "Парагвай": ["Paraguay"],
-  "Австралия": ["Australia"],
-  "Турция": ["Turkey", "Türkiye"],
-  "Нидерланды": ["Netherlands"],
-  "Япония": ["Japan"],
-  "Швеция": ["Sweden"],
-  "Тунис": ["Tunisia"],
-  "Германия": ["Germany"],
-  "Кюрасао": ["Curaçao", "Curacao"],
+  Чехия: ["Czech Republic", "Czechia"],
+  Канада: ["Canada"],
+  Босния: ["Bosnia and Herzegovina", "Bosnia", "Bosnia-Herzegovina"],
+  Катар: ["Qatar"],
+  Швейцария: ["Switzerland"],
+  Бразилия: ["Brazil"],
+  Марокко: ["Morocco"],
+  Гаити: ["Haiti"],
+  Шотландия: ["Scotland"],
+  США: ["USA", "United States"],
+  Парагвай: ["Paraguay"],
+  Австралия: ["Australia"],
+  Турция: ["Turkey", "Türkiye"],
+  Нидерланды: ["Netherlands"],
+  Япония: ["Japan"],
+  Швеция: ["Sweden"],
+  Тунис: ["Tunisia"],
+  Германия: ["Germany"],
+  Кюрасао: ["Curaçao", "Curacao"],
   "Кот-д'Ивуар": ["Ivory Coast", "Cote d'Ivoire", "Côte d'Ivoire"],
-  "Эквадор": ["Ecuador"],
-  "Испания": ["Spain"],
+  Эквадор: ["Ecuador"],
+  Испания: ["Spain"],
   "Кабо-Верде": ["Cape Verde", "Cape Verde Islands"],
   "Саудовская Аравия": ["Saudi Arabia"],
-  "Уругвай": ["Uruguay"],
-  "Бельгия": ["Belgium"],
-  "Египет": ["Egypt"],
-  "Иран": ["Iran"],
+  Уругвай: ["Uruguay"],
+  Бельгия: ["Belgium"],
+  Египет: ["Egypt"],
+  Иран: ["Iran"],
   "Новая Зеландия": ["New Zealand"],
-  "Франция": ["France"],
-  "Сенегал": ["Senegal"],
-  "Ирак": ["Iraq"],
-  "Норвегия": ["Norway"],
-  "Аргентина": ["Argentina"],
-  "Алжир": ["Algeria"],
-  "Австрия": ["Austria"],
-  "Иордания": ["Jordan"],
-  "Англия": ["England"],
-  "Хорватия": ["Croatia"],
-  "Гана": ["Ghana"],
-  "Панама": ["Panama"],
-  "Португалия": ["Portugal"],
+  Франция: ["France"],
+  Сенегал: ["Senegal"],
+  Ирак: ["Iraq"],
+  Норвегия: ["Norway"],
+  Аргентина: ["Argentina"],
+  Алжир: ["Algeria"],
+  Австрия: ["Austria"],
+  Иордания: ["Jordan"],
+  Англия: ["England"],
+  Хорватия: ["Croatia"],
+  Гана: ["Ghana"],
+  Панама: ["Panama"],
+  Португалия: ["Portugal"],
   "ДР Конго": ["DR Congo", "Congo DR"],
-  "Узбекистан": ["Uzbekistan"],
-  "Колумбия": ["Colombia"],
+  Узбекистан: ["Uzbekistan"],
+  Колумбия: ["Colombia"],
 };
 
 const EN_TO_RU = new Map<string, string>();
@@ -173,7 +174,9 @@ export interface FetchResult {
  * Запрашивает завершённые матчи из API и обновляет data/results.json.
  * Возвращает статистику и список обновлённых матчей.
  */
-export async function fetchAndSaveResults(apiKey: string): Promise<FetchResult> {
+export async function fetchAndSaveResults(
+  apiKey: string,
+): Promise<FetchResult> {
   const result: FetchResult = {
     matched: 0,
     updated: 0,
@@ -183,34 +186,41 @@ export async function fetchAndSaveResults(apiKey: string): Promise<FetchResult> 
   };
 
   // Загружаем каталог матчей
-  const matches = JSON.parse(
-    fs.readFileSync(MATCHES_PATH, "utf-8")
-  ) as Record<string, {
-    id: string;
-    date: string;
-    time: string;
-    homeTeam: string;
-    awayTeam: string;
-    isPlaceholder?: boolean;
-  }>;
+  const matches = JSON.parse(fs.readFileSync(MATCHES_PATH, "utf-8")) as Record<
+    string,
+    {
+      id: string;
+      date: string;
+      time: string;
+      homeTeam: string;
+      awayTeam: string;
+      isPlaceholder?: boolean;
+    }
+  >;
 
   // Загружаем текущие результаты
-  const results = JSON.parse(
-    fs.readFileSync(RESULTS_PATH, "utf-8")
-  ) as Record<string, { home: number | null; away: number | null }>;
+  const results = JSON.parse(fs.readFileSync(RESULTS_PATH, "utf-8")) as Record<
+    string,
+    { home: number | null; away: number | null }
+  >;
 
   // Индекс по дате
-  const localByDate = new Map<string, Array<{
-    matchId: string;
-    homeRu: string;
-    awayRu: string;
-  }>>();
+  const localByDate = new Map<
+    string,
+    Array<{
+      matchId: string;
+      homeRu: string;
+      awayRu: string;
+    }>
+  >();
 
   for (const [matchId, m] of Object.entries(matches)) {
     if (m.isPlaceholder) continue;
     const iso = dateToISO(m.date);
     if (!localByDate.has(iso)) localByDate.set(iso, []);
-    localByDate.get(iso)!.push({ matchId, homeRu: m.homeTeam, awayRu: m.awayTeam });
+    localByDate
+      .get(iso)!
+      .push({ matchId, homeRu: m.homeTeam, awayRu: m.awayTeam });
   }
 
   // Запрашиваем из API
@@ -262,9 +272,32 @@ export async function fetchAndSaveResults(apiKey: string): Promise<FetchResult> 
     if (!found) result.unmatched++;
   }
 
+  // Применяем ручные переопределения (overrides)
+  let overrides: Record<string, { home: number; away: number }> = {};
+  try {
+    overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, "utf-8"));
+  } catch {
+    // файла нет или пустой — игнорируем
+  }
+
+  let overridesApplied = false;
+  for (const [matchId, score] of Object.entries(overrides)) {
+    if (results[matchId]) {
+      const prev = results[matchId];
+      if (prev.home !== score.home || prev.away !== score.away) {
+        results[matchId] = { home: score.home, away: score.away };
+        overridesApplied = true;
+      }
+    }
+  }
+
   // Записываем только если были изменения
-  if (result.updated > 0) {
-    fs.writeFileSync(RESULTS_PATH, JSON.stringify(results, null, 2) + "\n", "utf-8");
+  if (result.updated > 0 || overridesApplied) {
+    fs.writeFileSync(
+      RESULTS_PATH,
+      JSON.stringify(results, null, 2) + "\n",
+      "utf-8",
+    );
   }
 
   return result;
