@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
-import { DEFAULT_MATCHES, DEFAULT_MATCHES_LIST } from "./matches";
-import { isMatchFinished, isMatchPredictable, isPlayoffPhase } from "./matchUtils";
+import { MATCHES_MAP, MATCHES_LIST } from "./matches";
+import {
+  isMatchFinished,
+  isMatchPredictable,
+  isPlayoffPhase,
+} from "./matchUtils";
 import { computeStandings } from "./scoring";
 import type {
   MatchDef,
@@ -35,14 +39,20 @@ import {
   mergePlayerRawJson,
   PLAYER_SLOTS,
 } from "./parsePlayerJson";
-import { savePlayer, loadAllPlayers, loadPlayerFile, loadMatchResults, isServerReachable } from "./utils/api";
+import {
+  savePlayer,
+  loadAllPlayers,
+  loadPlayerFile,
+  loadMatchResults,
+  isServerReachable,
+} from "./utils/api";
 import usersData from "./users.json";
 
 const SLOT_MAP_KEY = "wc2026_login_slot";
 
 /** Дата и время первого матча турнира */
 const FIRST_MATCH = (() => {
-  const first = DEFAULT_MATCHES_LIST.find((m) => !m.isPlaceholder);
+  const first = MATCHES_LIST.find((m) => !m.isPlaceholder);
   if (!first) return new Date(0);
   const [day, month, year] = first.date.split(".").map(Number);
   const [hours, minutes] = first.time.split(":").map(Number);
@@ -182,7 +192,7 @@ export function App() {
     protectedPages.includes(page);
 
   const [matches, setMatches] = useState<MatchResultState[]>(
-    DEFAULT_MATCHES_LIST.map((def) => ({
+    MATCHES_LIST.map((def) => ({
       def,
       homeInput: "",
       awayInput: "",
@@ -191,7 +201,9 @@ export function App() {
 
   const [players, setPlayers] = useState<PlayerState[]>(() => emptyPlayers());
   const [playersLoaded, setPlayersLoaded] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [playerLoading, setPlayerLoading] = useState(true);
   const [serverReachable, setServerReachable] = useState<boolean | null>(null);
 
@@ -237,11 +249,16 @@ export function App() {
       setMatches((prev) =>
         prev.map((m) => {
           const matchResult = results[m.def.id];
-          if (matchResult && (matchResult.home !== null || matchResult.away !== null)) {
+          if (
+            matchResult &&
+            (matchResult.home !== null || matchResult.away !== null)
+          ) {
             return {
               ...m,
-              homeInput: matchResult.home !== null ? String(matchResult.home) : "",
-              awayInput: matchResult.away !== null ? String(matchResult.away) : "",
+              homeInput:
+                matchResult.home !== null ? String(matchResult.home) : "",
+              awayInput:
+                matchResult.away !== null ? String(matchResult.away) : "",
             };
           }
           return m;
@@ -274,7 +291,7 @@ export function App() {
   const [currentPlayer, setCurrentPlayer] = useState<PlayerState>(emptyPlayer);
   const [scoreDraft, setScoreDraft] = useState<
     Record<MatchId, ScoreDraftEntry>
-  >(() => draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, new Map()));
+  >(() => draftFromPredictionsMapShallow(MATCHES_LIST, new Map()));
 
   // Medalists and top scorer draft
   const [medalistsDraft, setMedalistsDraft] = useState<MedalistsPrediction>({
@@ -311,10 +328,16 @@ export function App() {
       setSlotForLogin(cur.login, slot);
       setParticipantSlot(slot);
       // Не перезаписываем currentPlayer, если у него уже есть прогнозы для этого логина
-      if (currentPlayer.login !== cur.login || currentPlayer.predictions.size === 0) {
+      if (
+        currentPlayer.login !== cur.login ||
+        currentPlayer.predictions.size === 0
+      ) {
         setCurrentPlayer(players[slot]);
         setScoreDraft(
-          draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, players[slot].predictions),
+          draftFromPredictionsMapShallow(
+            MATCHES_LIST,
+            players[slot].predictions,
+          ),
         );
         setMedalistsDraft(
           players[slot].medalists ?? { gold: "", silver: "", bronze: "" },
@@ -339,7 +362,7 @@ export function App() {
       if (loaded) {
         setCurrentPlayer(loaded);
         setScoreDraft(
-          draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, loaded.predictions),
+          draftFromPredictionsMapShallow(MATCHES_LIST, loaded.predictions),
         );
         setMedalistsDraft(
           loaded.medalists ?? { gold: "", silver: "", bronze: "" },
@@ -411,7 +434,7 @@ export function App() {
       // Берём имя: из сохранённых данных -> из users.json по логину -> пропускаем пустой слот
       const displayName = p.name.trim()
         ? p.name
-        : (p.login && loginToNickname.get(p.login));
+        : p.login && loginToNickname.get(p.login);
       if (!displayName) continue; // пустой слот без логина — не показываем
 
       const row = map.get(p.id);
@@ -489,8 +512,12 @@ export function App() {
   ];
 
   const handleScoreChange = (matchId: string, home: string, away: string) => {
-    const matchDef = DEFAULT_MATCHES[matchId];
-    if (matchDef && (isMatchFinished(matchDef) || !isMatchPredictable(matchDef))) return;
+    const matchDef = MATCHES_MAP[matchId];
+    if (
+      matchDef &&
+      (isMatchFinished(matchDef) || !isMatchPredictable(matchDef))
+    )
+      return;
     setScoreDraft((prev) => ({
       ...prev,
       [matchId]: { ...prev[matchId], h: home, a: away },
@@ -504,7 +531,10 @@ export function App() {
     }));
   };
 
-  const handleMethodChange = (matchId: string, method: ScoreDraftEntry["method"]) => {
+  const handleMethodChange = (
+    matchId: string,
+    method: ScoreDraftEntry["method"],
+  ) => {
     setScoreDraft((prev) => ({
       ...prev,
       [matchId]: { ...prev[matchId], method },
@@ -520,7 +550,11 @@ export function App() {
       return;
     }
     if (participantSlot < 0) {
-      console.warn("[SAVE] ❌ participantSlot =", participantSlot, "— слот не назначен");
+      console.warn(
+        "[SAVE] ❌ participantSlot =",
+        participantSlot,
+        "— слот не назначен",
+      );
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
       return;
@@ -528,36 +562,53 @@ export function App() {
 
     const name = (currentPlayer.name || user.nickname || "").trim();
     if (!name) {
-      console.warn("[SAVE] ❌ Имя пустое — currentPlayer.name =", currentPlayer.name, "user.nickname =", user.nickname);
+      console.warn(
+        "[SAVE] ❌ Имя пустое — currentPlayer.name =",
+        currentPlayer.name,
+        "user.nickname =",
+        user.nickname,
+      );
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 3000);
       return;
     }
 
     // Проверка: есть ли хотя бы один счёт
-    const hasAnyScore = Object.values(scoreDraft).some((s) => s.h !== "" && s.a !== "");
+    const hasAnyScore = Object.values(scoreDraft).some(
+      (s) => s.h !== "" && s.a !== "",
+    );
     if (!hasAnyScore) {
       console.warn("[SAVE] ❌ Нет ни одного заполненного счёта");
       return;
     }
 
     // Проверка: если в плей-офф указана ничья, должен быть выбран победитель и способ
-    const hasIncompletePlayoffDraws = DEFAULT_MATCHES_LIST
-      .filter((m) => isPlayoffPhase(m.phase) && isMatchPredictable(m) && !isMatchFinished(m))
-      .some((m) => {
-        const d = scoreDraft[m.id];
-        return d && d.h !== "" && d.a !== "" && d.h === d.a && (!d.winner || !d.method);
-      });
+    const hasIncompletePlayoffDraws = MATCHES_LIST.filter(
+      (m) =>
+        isPlayoffPhase(m.phase) && isMatchPredictable(m) && !isMatchFinished(m),
+    ).some((m) => {
+      const d = scoreDraft[m.id];
+      return (
+        d && d.h !== "" && d.a !== "" && d.h === d.a && (!d.winner || !d.method)
+      );
+    });
     if (hasIncompletePlayoffDraws) {
       console.warn("[SAVE] ❌ Есть незавершённые ничьи в плей-офф");
       return;
     }
 
-    console.log("[SAVE] ✅ Начинаем сохранение — login:", user.login, "name:", name, "slot:", participantSlot);
+    console.log(
+      "[SAVE] ✅ Начинаем сохранение — login:",
+      user.login,
+      "name:",
+      name,
+      "slot:",
+      participantSlot,
+    );
 
     // Собираем прогнозы из draft напрямую
     const predsMap = new Map<string, PlayerPrediction>();
-    for (const m of DEFAULT_MATCHES_LIST) {
+    for (const m of MATCHES_LIST) {
       const d = scoreDraft[m.id];
       if (d && d.h !== "" && d.a !== "") {
         const pred: PlayerPrediction = { home: Number(d.h), away: Number(d.a) };
@@ -568,7 +619,7 @@ export function App() {
         predsMap.set(m.id, pred);
       }
     }
-    const predsRecord = predictionsMapFromDraft(DEFAULT_MATCHES_LIST, scoreDraft);
+    const predsRecord = predictionsMapFromDraft(MATCHES_LIST, scoreDraft);
 
     const effectiveTopScorer = isFirstMatchStarted
       ? (currentPlayer.topScorer ?? "")
@@ -609,7 +660,7 @@ export function App() {
       };
       setCurrentPlayer(serverPlayer);
       setScoreDraft(
-        draftFromPredictionsMapShallow(DEFAULT_MATCHES_LIST, serverPlayer.predictions),
+        draftFromPredictionsMapShallow(MATCHES_LIST, serverPlayer.predictions),
       );
       setMedalistsDraft(
         serverPlayer.medalists ?? { gold: "", silver: "", bronze: "" },
@@ -666,9 +717,7 @@ export function App() {
   };
 
   const showParticipateForm =
-    page === "participate" &&
-    !!user &&
-    !playerLoading;
+    page === "participate" && !!user && !playerLoading;
 
   return (
     <div className="app">
@@ -712,7 +761,16 @@ export function App() {
               onClick={() => setShowAuthModal(true)}
             >
               <span className="sidebar-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
                   <polyline points="10 17 15 12 10 7" />
                   <line x1="15" y1="12" x2="3" y2="12" />
@@ -730,7 +788,16 @@ export function App() {
               onClick={handleLogout}
             >
               <span className="sidebar-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
@@ -748,7 +815,8 @@ export function App() {
               <div className="server-offline-icon">⚡</div>
               <h2>Сервер недоступен</h2>
               <p>
-                Не удалось подключиться к серверу. Пожалуйста, убедитесь, что сервер запущен, и повторите попытку.
+                Не удалось подключиться к серверу. Пожалуйста, убедитесь, что
+                сервер запущен, и повторите попытку.
               </p>
               <button
                 className="btn btn-primary"

@@ -3,8 +3,13 @@ import cors from "cors";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULT_MATCHES } from "../src/matches.js";
-import { initDatabase, getPlayer, getResultsFresh, savePlayer, getCacheSize } from "./database.js";
+import {
+  initDatabase,
+  getPlayer,
+  getResultsFresh,
+  savePlayer,
+  getCacheSize,
+} from "./database.js";
 import { fetchAndSaveResults } from "./auto-fetch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -25,7 +30,9 @@ interface MatchDef {
   isPlaceholder?: boolean;
 }
 
-const matchesCatalog: Record<string, MatchDef> = DEFAULT_MATCHES;
+const matchesCatalog: Record<string, MatchDef> = JSON.parse(
+  await fs.readFile(path.join(DATA_DIR, "matches.json"), "utf-8"),
+) as Record<string, MatchDef>;
 
 // ---- Загрузка users.json и создание файлов для каждого пользователя ----
 interface UserEntry {
@@ -45,7 +52,9 @@ try {
   const usersData = JSON.parse(usersContent) as UsersFile;
   registeredUsers = Array.isArray(usersData.users) ? usersData.users : [];
 } catch {
-  console.warn("Could not read users.json, continuing without predefined users");
+  console.warn(
+    "Could not read users.json, continuing without predefined users",
+  );
 }
 
 // Создаём начальные JSON-файлы для пользователей, если их ещё нет
@@ -85,9 +94,13 @@ function parseMatchDateTime(date: string, time: string): Date | null {
   const [day, month, year] = date.split(".").map(Number);
   const [hours, minutes] = time.split(":").map(Number);
   if (
-    isNaN(day) || isNaN(month) || isNaN(year) ||
-    isNaN(hours) || isNaN(minutes)
-  ) return null;
+    isNaN(day) ||
+    isNaN(month) ||
+    isNaN(year) ||
+    isNaN(hours) ||
+    isNaN(minutes)
+  )
+    return null;
   return new Date(year, month - 1, day, hours, minutes);
 }
 
@@ -124,7 +137,9 @@ app.get("/api/results", async (_req, res) => {
 
 // GET /api/players — список всех игроков из ОЗУ (мгновенно)
 app.get("/api/players", async (req, res) => {
-  const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
+  const requesterLogin = (req.headers["x-user-login"] as string | undefined)
+    ?.trim()
+    .toLowerCase();
   const hasResult = await getMatchResultsMap();
   const results: unknown[] = [];
 
@@ -134,7 +149,10 @@ app.get("/api/players", async (req, res) => {
     if (data) {
       // Если запросивший пользователь не является владельцем — фильтруем
       // (Пашок видит все прогнозы без фильтрации)
-      if (!requesterLogin || (requesterLogin !== login && requesterLogin !== "pavel")) {
+      if (
+        !requesterLogin ||
+        (requesterLogin !== login && requesterLogin !== "pavel")
+      ) {
         results.push(filterPlayerForNonOwner(data, hasResult));
       } else {
         results.push(data);
@@ -172,7 +190,9 @@ app.get("/api/players/:login", async (req, res) => {
   }
 
   // Проверяем, является ли запросивший пользователь владельцем
-  const requesterLogin = (req.headers["x-user-login"] as string | undefined)?.trim().toLowerCase();
+  const requesterLogin = (req.headers["x-user-login"] as string | undefined)
+    ?.trim()
+    .toLowerCase();
   const isOwner = requesterLogin === login;
 
   const data = await getPlayer(login);
@@ -205,7 +225,10 @@ app.post("/api/players/save", async (req, res) => {
     const body = req.body as {
       login: string;
       player: string;
-      predictions: Record<string, { home: number; away: number; winner?: string; method?: string }>;
+      predictions: Record<
+        string,
+        { home: number; away: number; winner?: string; method?: string }
+      >;
       groupStandings?: unknown[];
       playoff?: unknown[];
       topScorer?: unknown;
@@ -217,7 +240,9 @@ app.post("/api/players/save", async (req, res) => {
       return;
     }
 
-    console.log(`[SAVE-RAW] body keys=${Object.keys(body).join(",")} predictions=${body.predictions ? `object(${Object.keys(body.predictions).length} keys)` : typeof body.predictions} topScorer=${JSON.stringify(body.topScorer)} medalists=${JSON.stringify(body.medalists)} groupStandings=${Array.isArray(body.groupStandings) ? `array(${body.groupStandings.length})` : typeof body.groupStandings} playoff=${Array.isArray(body.playoff) ? `array(${body.playoff.length})` : typeof body.playoff}`);
+    console.log(
+      `[SAVE-RAW] body keys=${Object.keys(body).join(",")} predictions=${body.predictions ? `object(${Object.keys(body.predictions).length} keys)` : typeof body.predictions} topScorer=${JSON.stringify(body.topScorer)} medalists=${JSON.stringify(body.medalists)} groupStandings=${Array.isArray(body.groupStandings) ? `array(${body.groupStandings.length})` : typeof body.groupStandings} playoff=${Array.isArray(body.playoff) ? `array(${body.playoff.length})` : typeof body.playoff}`,
+    );
 
     const login = body.login.trim().toLowerCase();
 
@@ -236,9 +261,19 @@ app.post("/api/players/save", async (req, res) => {
     if (existingData) {
       const preds = existingData.predictions;
       if (preds && typeof preds === "object" && !Array.isArray(preds)) {
-        for (const [matchId, val] of Object.entries(preds as Record<string, unknown>)) {
-          if (val && typeof val === "object" && typeof (val as Record<string, unknown>).home === "number" && typeof (val as Record<string, unknown>).away === "number") {
-            existingPredsMap.set(matchId, { home: (val as { home: number; away: number }).home, away: (val as { home: number; away: number }).away });
+        for (const [matchId, val] of Object.entries(
+          preds as Record<string, unknown>,
+        )) {
+          if (
+            val &&
+            typeof val === "object" &&
+            typeof (val as Record<string, unknown>).home === "number" &&
+            typeof (val as Record<string, unknown>).away === "number"
+          ) {
+            existingPredsMap.set(matchId, {
+              home: (val as { home: number; away: number }).home,
+              away: (val as { home: number; away: number }).away,
+            });
           }
         }
       }
@@ -255,12 +290,20 @@ app.post("/api/players/save", async (req, res) => {
     }
 
     // Валидируем прогнозы: если матч уже начался, оставляем существующий
-    const validatedPredictions: Record<string, { home: number; away: number; winner?: string; method?: string }> = {};
+    const validatedPredictions: Record<
+      string,
+      { home: number; away: number; winner?: string; method?: string }
+    > = {};
 
-    if (body.predictions && typeof body.predictions === "object" && !Array.isArray(body.predictions)) {
+    if (
+      body.predictions &&
+      typeof body.predictions === "object" &&
+      !Array.isArray(body.predictions)
+    ) {
       for (const [matchId, pred] of Object.entries(body.predictions)) {
         if (typeof pred !== "object" || pred === null) continue;
-        if (typeof pred.home !== "number" || typeof pred.away !== "number") continue;
+        if (typeof pred.home !== "number" || typeof pred.away !== "number")
+          continue;
 
         if (hasMatchStarted(matchId)) {
           // Матч уже начался — берём существующий прогноз (или 0:0)
@@ -271,12 +314,19 @@ app.post("/api/players/save", async (req, res) => {
           };
         } else {
           // Матч ещё не начался — используем как есть
-          const validated: { home: number; away: number; winner?: string; method?: string } = {
+          const validated: {
+            home: number;
+            away: number;
+            winner?: string;
+            method?: string;
+          } = {
             home: pred.home,
             away: pred.away,
           };
-          if (pred.winner && typeof pred.winner === "string") validated.winner = pred.winner;
-          if (pred.method && typeof pred.method === "string") validated.method = pred.method;
+          if (pred.winner && typeof pred.winner === "string")
+            validated.winner = pred.winner;
+          if (pred.method && typeof pred.method === "string")
+            validated.method = pred.method;
           validatedPredictions[matchId] = validated;
         }
       }
@@ -294,7 +344,9 @@ app.post("/api/players/save", async (req, res) => {
 
     // 💾 Сохраняем: ОЗУ мгновенно + диск в фоне (юзер не ждёт!)
     savePlayer(login, payload);
-    console.log(`[SAVE] login=${login} preds=${Object.keys(validatedPredictions).length} topScorer=${JSON.stringify(topScorer)} medalists=${JSON.stringify(medalists)} groupStandings=${JSON.stringify(body.groupStandings)?.length ?? 0} playoff=${JSON.stringify(body.playoff)?.length ?? 0}`);
+    console.log(
+      `[SAVE] login=${login} preds=${Object.keys(validatedPredictions).length} topScorer=${JSON.stringify(topScorer)} medalists=${JSON.stringify(medalists)} groupStandings=${JSON.stringify(body.groupStandings)?.length ?? 0} playoff=${JSON.stringify(body.playoff)?.length ?? 0}`,
+    );
     res.json({ ok: true, data: payload });
   } catch (err) {
     console.error("=== SAVE HANDLER ERROR ===");
@@ -303,9 +355,17 @@ app.post("/api/players/save", async (req, res) => {
     console.error("Body type:", typeof req.body);
     console.error("Body keys:", req.body ? Object.keys(req.body) : "null");
     console.error("Predictions type:", typeof req.body?.predictions);
-    console.error("Predictions constructor:", req.body?.predictions?.constructor?.name);
+    console.error(
+      "Predictions constructor:",
+      req.body?.predictions?.constructor?.name,
+    );
     console.error("=========================");
-    res.status(500).json({ error: "Internal server error", details: err instanceof Error ? err.message : String(err) });
+    res
+      .status(500)
+      .json({
+        error: "Internal server error",
+        details: err instanceof Error ? err.message : String(err),
+      });
   }
 });
 
@@ -315,13 +375,22 @@ app.post("/api/players/save", async (req, res) => {
  * — скрывает topScorer/medalists до старта первого матча
  * — скрывает groupStandings
  */
-function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<string, boolean>): Record<string, unknown> {
+function filterPlayerForNonOwner(
+  data: Record<string, unknown>,
+  hasResult: Map<string, boolean>,
+): Record<string, unknown> {
   const filtered = { ...data };
 
   // Фильтруем прогнозы: оставляем только матчи с результатами
-  if (filtered.predictions && typeof filtered.predictions === "object" && !Array.isArray(filtered.predictions)) {
+  if (
+    filtered.predictions &&
+    typeof filtered.predictions === "object" &&
+    !Array.isArray(filtered.predictions)
+  ) {
     const filteredPreds: Record<string, unknown> = {};
-    for (const [matchId, pred] of Object.entries(filtered.predictions as Record<string, unknown>)) {
+    for (const [matchId, pred] of Object.entries(
+      filtered.predictions as Record<string, unknown>,
+    )) {
       if (hasResult.get(matchId) === true) {
         filteredPreds[matchId] = pred;
       }
@@ -349,13 +418,23 @@ function filterPlayerForNonOwner(data: Record<string, unknown>, hasResult: Map<s
 app.get("/api/points-history", async (req, res) => {
   const includeZero = req.query.includeZero === "1";
   const resultsData = await getResultsFresh();
-  const allPlayers: Array<{ login: string; nickname: string; predictions: Record<string, { home: number; away: number }> }> = [];
+  const allPlayers: Array<{
+    login: string;
+    nickname: string;
+    predictions: Record<string, { home: number; away: number }>;
+  }> = [];
 
   for (const u of registeredUsers) {
     const data = await getPlayer(u.login);
     if (!data) continue;
-    const preds = data.predictions as Record<string, { home: number; away: number }> | undefined;
-    allPlayers.push({ login: u.login, nickname: u.nickname, predictions: preds ?? {} });
+    const preds = data.predictions as
+      | Record<string, { home: number; away: number }>
+      | undefined;
+    allPlayers.push({
+      login: u.login,
+      nickname: u.nickname,
+      predictions: preds ?? {},
+    });
   }
 
   type HistoryRow = {
@@ -388,7 +467,6 @@ app.get("/api/points-history", async (req, res) => {
       const pred = p.predictions[matchId];
       if (!pred) continue;
 
-
       const sameOutcome =
         (pred.home > pred.away && result.home > result.away) ||
         (pred.home < pred.away && result.home < result.away) ||
@@ -416,7 +494,9 @@ app.get("/api/points-history", async (req, res) => {
     if (!includeZero && entries.length === 0) continue;
 
     // Сортируем по очкам (убывание), потом по имени
-    entries.sort((a, b) => b.points - a.points || a.player.localeCompare(b.player, "ru"));
+    entries.sort(
+      (a, b) => b.points - a.points || a.player.localeCompare(b.player, "ru"),
+    );
 
     history.push({
       matchId,
@@ -443,7 +523,11 @@ app.get("/api/points-history", async (req, res) => {
 
 // GET /api/health — лёгкий эндпоинт для cron-прогрева (не грузит диск)
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", uptime: Math.round(process.uptime()), playersInCache: getCacheSize() });
+  res.json({
+    status: "ok",
+    uptime: Math.round(process.uptime()),
+    playersInCache: getCacheSize(),
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────
@@ -459,7 +543,9 @@ async function loadApiKey(): Promise<string | null> {
     const envContent = await fs.readFile(ENV_PATH, "utf-8");
     const match = envContent.match(/FOOTBALL_DATA_KEY=(.+)/);
     if (match?.[1]?.trim()) return match[1].trim();
-  } catch { /* .env нет */ }
+  } catch {
+    /* .env нет */
+  }
   return null;
 }
 
@@ -473,7 +559,7 @@ async function scheduleAutoFetch() {
 
   // Читаем текущие результаты
   const resultsData = JSON.parse(
-    await fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8")
+    await fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8"),
   ) as Record<string, { home: number | null; away: number | null }>;
 
   const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 часа после старта
@@ -495,7 +581,11 @@ async function scheduleAutoFetch() {
     if (match.isPlaceholder) continue;
 
     // Если результат уже есть — пропускаем
-    if (resultsData[matchId]?.home !== null && resultsData[matchId]?.away !== null) continue;
+    if (
+      resultsData[matchId]?.home !== null &&
+      resultsData[matchId]?.away !== null
+    )
+      continue;
 
     const matchTime = parseMatchDateTime(match.date, match.time);
     if (!matchTime) continue;
@@ -511,13 +601,20 @@ async function scheduleAutoFetch() {
       // Планируем на точное время
       scheduled++;
       const mins = Math.round(delay / 60_000);
-      console.log(`   ⏰ ${matchId} ${match.homeTeam} vs ${match.awayTeam} → через ${mins} мин`);
-      setTimeout(() => tryFetchMatch(matchId, match.homeTeam, match.awayTeam), delay);
+      console.log(
+        `   ⏰ ${matchId} ${match.homeTeam} vs ${match.awayTeam} → через ${mins} мин`,
+      );
+      setTimeout(
+        () => tryFetchMatch(matchId, match.homeTeam, match.awayTeam),
+        delay,
+      );
     }
   }
 
   if (scheduled > 0 || immediate > 0) {
-    console.log(`🤖 Автозапуск: ${scheduled} запланировано, ${immediate} немедленно`);
+    console.log(
+      `🤖 Автозапуск: ${scheduled} запланировано, ${immediate} немедленно`,
+    );
   } else {
     console.log("🤖 Автозапуск: все результаты на месте, нечего планировать");
   }
@@ -528,14 +625,21 @@ async function scheduleAutoFetch() {
   setInterval(() => {
     fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8")
       .then((raw) => {
-        const current = JSON.parse(raw) as Record<string, { home: number | null; away: number | null }>;
+        const current = JSON.parse(raw) as Record<
+          string,
+          { home: number | null; away: number | null }
+        >;
         const nowInner = Date.now();
         let caught = 0;
 
         for (const [matchId, match] of Object.entries(matchesCatalog)) {
           if (match.isPlaceholder) continue;
           if (fetching.has(matchId)) continue; // Уже ждём ответ от API
-          if (current[matchId]?.home !== null && current[matchId]?.away !== null) continue;
+          if (
+            current[matchId]?.home !== null &&
+            current[matchId]?.away !== null
+          )
+            continue;
 
           const matchTime = parseMatchDateTime(match.date, match.time);
           if (!matchTime) continue;
@@ -547,29 +651,45 @@ async function scheduleAutoFetch() {
         }
 
         if (caught > 0) {
-          console.log(`🤖 Catch-up: ${caught} матчей без результата, запускаем fetch`);
+          console.log(
+            `🤖 Catch-up: ${caught} матчей без результата, запускаем fetch`,
+          );
         }
       })
-      .catch(() => { /* ignore — проверим на следующей итерации */ });
+      .catch(() => {
+        /* ignore — проверим на следующей итерации */
+      });
   }, CATCHUP_INTERVAL_MS);
 
-  async function doFetch(matchId: string, home: string, away: string, key: string) {
+  async function doFetch(
+    matchId: string,
+    home: string,
+    away: string,
+    key: string,
+  ) {
     try {
       console.log(`🤖 Запрос результатов (${home} vs ${away})...`);
       const r = await fetchAndSaveResults(key);
 
       if (r.updated > 0) {
         for (const m of r.updatedMatches) {
-          console.log(`   🔄 ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`);
+          console.log(
+            `   🔄 ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`,
+          );
         }
         fetching.delete(matchId); // Результат получен — освобождаем слот
       } else {
         // Результата ещё нет — повторим через 5 мин
-        console.log(`   ⏳ Результата ${matchId} ещё нет в API, повтор через 5 мин`);
+        console.log(
+          `   ⏳ Результата ${matchId} ещё нет в API, повтор через 5 мин`,
+        );
         setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
       }
     } catch (err) {
-      console.error(`🤖 Ошибка ${matchId}:`, err instanceof Error ? err.message : err);
+      console.error(
+        `🤖 Ошибка ${matchId}:`,
+        err instanceof Error ? err.message : err,
+      );
       // Повторим через 5 мин при ошибке
       setTimeout(() => doFetch(matchId, home, away, key), RETRY_DELAY_MS);
     }
@@ -578,6 +698,6 @@ async function scheduleAutoFetch() {
 
 scheduleAutoFetch();
 
-app.listen(3001, '127.0.0.1', () => {
+app.listen(3001, "127.0.0.1", () => {
   console.log(`Server running on http://localhost:3001`);
 });

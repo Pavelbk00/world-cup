@@ -19,12 +19,15 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
     })();
   }, [includeZero]);
 
-  const displayedHistory = onlyMine && currentUserLogin
-    ? history.map((row) => ({
-        ...row,
-        entries: row.entries.filter((e) => e.login === currentUserLogin),
-      })).filter((row) => row.entries.length > 0)
-    : history;
+  const displayedHistory =
+    onlyMine && currentUserLogin
+      ? history
+          .map((row) => ({
+            ...row,
+            entries: row.entries.filter((e) => e.login === currentUserLogin),
+          }))
+          .filter((row) => row.entries.length > 0)
+      : history;
 
   if (loading) {
     return (
@@ -86,7 +89,9 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                   <span className="ph-card-teams">
                     {row.homeTeam} — {row.awayTeam}
                   </span>
-                  <span className="ph-card-date">{row.date}</span>
+                  <span className="ph-card-date">
+                    {row.date.replace(/\.\d{4}$/, "")}
+                  </span>
                 </div>
                 <div className="ph-card-score">
                   Итог: {row.actualHome}:{row.actualAway}
@@ -94,10 +99,7 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
               </div>
               <div className="ph-card-entries">
                 {row.entries.map((e) => (
-                  <div
-                    key={`${row.matchId}-${e.login}`}
-                    className="ph-entry"
-                  >
+                  <div key={`${row.matchId}-${e.login}`} className="ph-entry">
                     <span className="ph-entry-name">{e.player}</span>
                     <span className="ph-entry-pred">
                       прогноз {e.predHome}:{e.predAway}
