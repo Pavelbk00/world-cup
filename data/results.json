@@ -160,12 +160,12 @@
     "away": 2
   },
   "wc-041": {
-    "home": null,
-    "away": null
+    "home": 0,
+    "away": 0
   },
   "wc-042": {
-    "home": null,
-    "away": null
+    "home": 0,
+    "away": 1
   },
   "wc-043": {
     "home": 1,
@@ -184,12 +184,12 @@
     "away": 3
   },
   "wc-047": {
-    "home": null,
-    "away": null
+    "home": 1,
+    "away": 1
   },
   "wc-048": {
-    "home": null,
-    "away": null
+    "home": 1,
+    "away": 5
   },
   "wc-049": {
     "home": 3,
