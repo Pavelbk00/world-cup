@@ -235,8 +235,8 @@
       "away": 1
     },
     "wc-059": {
-      "home": 1,
-      "away": 2
+      "home": 0,
+      "away": 0
     },
     "wc-060": {
       "home": 0,
@@ -260,11 +260,11 @@
     },
     "wc-065": {
       "home": 0,
-      "away": 3
+      "away": 4
     },
     "wc-066": {
       "home": 1,
-      "away": 1
+      "away": 0
     },
     "wc-067": {
       "home": 2,
@@ -283,12 +283,12 @@
       "away": 0
     },
     "wc-071": {
-      "home": 1,
-      "away": 2
+      "home": 0,
+      "away": 1
     },
     "wc-072": {
       "home": 1,
-      "away": 1
+      "away": 0
     }
   },
   "groupStandings": [],
