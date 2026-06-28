@@ -360,12 +360,10 @@ app.post("/api/players/save", async (req, res) => {
       req.body?.predictions?.constructor?.name,
     );
     console.error("=========================");
-    res
-      .status(500)
-      .json({
-        error: "Internal server error",
-        details: err instanceof Error ? err.message : String(err),
-      });
+    res.status(500).json({
+      error: "Internal server error",
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
@@ -421,20 +419,37 @@ app.get("/api/points-history", async (req, res) => {
   const allPlayers: Array<{
     login: string;
     nickname: string;
-    predictions: Record<string, { home: number; away: number }>;
+    predictions: Record<
+      string,
+      { home: number; away: number; winner?: string; method?: string }
+    >;
   }> = [];
 
   for (const u of registeredUsers) {
     const data = await getPlayer(u.login);
     if (!data) continue;
     const preds = data.predictions as
-      | Record<string, { home: number; away: number }>
+      | Record<
+          string,
+          { home: number; away: number; winner?: string; method?: string }
+        >
       | undefined;
     allPlayers.push({
       login: u.login,
       nickname: u.nickname,
       predictions: preds ?? {},
     });
+  }
+
+  let playoffResults: Record<string, { winner: string; method: string }> = {};
+  try {
+    const raw = await fs.readFile(
+      path.join(DATA_DIR, "playoff-results.json"),
+      "utf-8",
+    );
+    playoffResults = JSON.parse(raw);
+  } catch {
+    /* ok */
   }
 
   type HistoryRow = {
@@ -452,6 +467,8 @@ app.get("/api/points-history", async (req, res) => {
       predHome: number;
       predAway: number;
       points: number;
+      playoffBonus?: number;
+      playoffMethod?: string;
     }>;
   };
 
@@ -461,6 +478,9 @@ app.get("/api/points-history", async (req, res) => {
     if (matchDef.isPlaceholder) continue;
     const result = resultsData[matchId];
     if (!result || result.home === null || result.away === null) continue;
+
+    const actualPlayoff = playoffResults[matchId];
+    const isPlayoff = !matchDef.phase.startsWith("Группа");
 
     const entries: HistoryRow["entries"] = [];
     for (const p of allPlayers) {
@@ -479,13 +499,31 @@ app.get("/api/points-history", async (req, res) => {
       if (sameDiff) points += 2;
       if (exact) points += 3;
 
-      if (points > 0 || includeZero) {
+      let playoffBonus = 0;
+      let playoffMethod: string | undefined;
+
+      if (isPlayoff && actualPlayoff && pred.winner) {
+        const norm = (s: string) => s.trim().toLowerCase();
+        if (norm(pred.winner) === norm(actualPlayoff.winner)) {
+          const m = actualPlayoff.method;
+          if (m === "regular") playoffBonus = 1;
+          else if (m === "extraTime") playoffBonus = 3;
+          else if (m === "penalties") playoffBonus = 5;
+          playoffMethod = m;
+        }
+      }
+
+      const totalPoints = points + playoffBonus;
+
+      if (totalPoints > 0 || includeZero) {
         entries.push({
           player: p.nickname,
           login: p.login,
           predHome: pred.home,
           predAway: pred.away,
-          points,
+          points: totalPoints,
+          playoffBonus: playoffBonus || undefined,
+          playoffMethod,
         });
       }
     }
@@ -519,6 +557,51 @@ app.get("/api/points-history", async (req, res) => {
   });
 
   res.json(history);
+});
+
+// GET /api/group-results — реальные групповые таблицы (из group-results.json)
+app.get("/api/group-results", async (_req, res) => {
+  try {
+    const raw = await fs.readFile(
+      path.join(DATA_DIR, "group-results.json"),
+      "utf-8",
+    );
+    res.json(JSON.parse(raw));
+  } catch {
+    res.json({ groups: {}, thirdPlaceTable: [] });
+  }
+});
+
+// GET /api/group-results/:login — групповые таблицы игрока (из {login}-group-results.json)
+app.get("/api/group-results/:login", async (req, res) => {
+  const login = req.params.login.trim().toLowerCase();
+  try {
+    const raw = await fs.readFile(
+      path.join(DATA_DIR, `${login}-group-result.json`),
+      "utf-8",
+    );
+    res.json(JSON.parse(raw));
+  } catch {
+    res.status(404).json({ error: "Not found" });
+  }
+});
+
+// GET /api/group-points — очки за групповой этап для всех игроков
+app.get("/api/group-points", async (_req, res) => {
+  const result: Record<string, number> = {};
+  for (const u of registeredUsers) {
+    try {
+      const raw = await fs.readFile(
+        path.join(DATA_DIR, `${u.login}-group-result.json`),
+        "utf-8",
+      );
+      const data = JSON.parse(raw) as { totalGroupStagePoints?: number };
+      result[u.login] = data.totalGroupStagePoints ?? 0;
+    } catch {
+      result[u.login] = 0;
+    }
+  }
+  res.json(result);
 });
 
 // GET /api/health — лёгкий эндпоинт для cron-прогрева (не грузит диск)

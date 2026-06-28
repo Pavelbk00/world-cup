@@ -28,13 +28,13 @@ export function StandingsPage({
         <table className="standings">
           <thead>
             <tr>
-              <th style={{textAlign: 'left'}}>#</th>
-              <th style={{textAlign: 'left'}}>Игрок</th>
+              <th style={{ textAlign: "left" }}>#</th>
+              <th style={{ textAlign: "left" }}>Игрок</th>
               <th className="num">Точный счёт (3)</th>
               <th className="num">Разница (2)</th>
               <th className="num">Исход (1)</th>
               <th className="num">Группы</th>
-              <th className="num">Плей-офф</th>
+              <th className="num">Способ</th>
               <th className="num">Бомбардир</th>
               <th className="num">Призёры</th>
               <th>Очки</th>
@@ -70,7 +70,10 @@ export function StandingsPage({
           </tbody>
         </table>
         {lastFinishedMatchLabel && (
-          <p className="hint" style={{ marginTop: '0.5rem', textAlign: 'center' }}>
+          <p
+            className="hint"
+            style={{ marginTop: "0.5rem", textAlign: "center" }}
+          >
             Последний сыгранный матч: {lastFinishedMatchLabel}
           </p>
         )}

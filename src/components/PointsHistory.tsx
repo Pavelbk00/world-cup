@@ -106,6 +106,14 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                     </span>
                     <span className={`ph-entry-pts ph-pts-${e.points}`}>
                       {e.points ? `+${e.points}` : e.points}
+                      {e.playoffBonus && (
+                        <span className="text-sm text-slate-400 ml-1">
+                          ({e.points - e.playoffBonus} счет
+                          {e.playoffMethod === "regular" && " + 1 осн. время"}
+                          {e.playoffMethod === "extraTime" && " + 3 доп. время"}
+                          {e.playoffMethod === "penalties" && " + 5 пенальти"})
+                        </span>
+                      )}
                     </span>
                   </div>
                 ))}

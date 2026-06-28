@@ -70,11 +70,16 @@ function exportShapeToPlayerState(data: ExportShape): PlayerState {
 }
 
 /** Load a single player by login. */
-export async function loadPlayerFile(login: string): Promise<PlayerState | null> {
+export async function loadPlayerFile(
+  login: string,
+): Promise<PlayerState | null> {
   try {
-    const res = await fetch(`${API_BASE}/players/${encodeURIComponent(login)}`, {
-      headers: authHeaders(),
-    });
+    const res = await fetch(
+      `${API_BASE}/players/${encodeURIComponent(login)}`,
+      {
+        headers: authHeaders(),
+      },
+    );
     if (!res.ok) return null;
     const data = (await res.json()) as ExportShape;
     return exportShapeToPlayerState(data);
@@ -105,7 +110,10 @@ export async function loadAllPlayers(): Promise<PlayerState[]> {
 /** Save (create or overwrite) a player's predictions on the server.
  *  Возвращает реально сохранённые данные с сервера (прогнозы на начавшиеся
  *  матчи могут быть заменены сервером на существующие). */
-export async function savePlayer(player: PlayerState, login: string): Promise<PlayerState | null> {
+export async function savePlayer(
+  player: PlayerState,
+  login: string,
+): Promise<PlayerState | null> {
   const data = buildExport(player, login);
 
   try {
@@ -115,7 +123,11 @@ export async function savePlayer(player: PlayerState, login: string): Promise<Pl
       body: JSON.stringify(data),
     });
     if (!res.ok) {
-      console.error("[API] savePlayer failed:", res.status, await res.text().catch(() => ""));
+      console.error(
+        "[API] savePlayer failed:",
+        res.status,
+        await res.text().catch(() => ""),
+      );
       return null;
     }
     const json = (await res.json()) as { ok: boolean; data?: ExportShape };
@@ -154,6 +166,8 @@ export interface PointsHistoryEntry {
   predHome: number;
   predAway: number;
   points: number;
+  playoffBonus?: number;
+  playoffMethod?: string;
 }
 
 export interface PointsHistoryRow {
@@ -169,14 +183,76 @@ export interface PointsHistoryRow {
 }
 
 /** Load points history from the server. */
-export async function loadPointsHistory(includeZero = false): Promise<PointsHistoryRow[]> {
+export async function loadPointsHistory(
+  includeZero = false,
+): Promise<PointsHistoryRow[]> {
   try {
-    const url = includeZero ? `${API_BASE}/points-history?includeZero=1` : `${API_BASE}/points-history`;
+    const url = includeZero
+      ? `${API_BASE}/points-history?includeZero=1`
+      : `${API_BASE}/points-history`;
     const res = await fetch(url);
     if (!res.ok) return [];
     return (await res.json()) as PointsHistoryRow[];
   } catch {
     return [];
+  }
+}
+
+export interface GroupResultTableRow {
+  place: number;
+  team: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  gf: number;
+  ga: number;
+  gd: number;
+  points: number;
+  fair_play_score: number;
+  group_points: number;
+}
+
+export interface GroupResultData {
+  groups: Record<string, GroupResultTableRow[]>;
+  thirdPlaceTable: Array<GroupResultTableRow & { group: string }>;
+  totalGroupStagePoints?: number;
+}
+
+/** Load real group results from the server. */
+export async function loadGroupResults(): Promise<GroupResultData> {
+  try {
+    const res = await fetch(`${API_BASE}/group-results`);
+    if (!res.ok) return { groups: {}, thirdPlaceTable: [] };
+    return (await res.json()) as GroupResultData;
+  } catch {
+    return { groups: {}, thirdPlaceTable: [] };
+  }
+}
+
+/** Load player group results from the server. */
+export async function loadPlayerGroupResults(
+  login: string,
+): Promise<GroupResultData | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/group-results/${encodeURIComponent(login)}`,
+    );
+    if (!res.ok) return null;
+    return (await res.json()) as GroupResultData;
+  } catch {
+    return null;
+  }
+}
+
+/** Load group stage points for all players (login -> points). */
+export async function loadGroupPoints(): Promise<Record<string, number>> {
+  try {
+    const res = await fetch(`${API_BASE}/group-points`);
+    if (!res.ok) return {};
+    return (await res.json()) as Record<string, number>;
+  } catch {
+    return {};
   }
 }
 

@@ -2,7 +2,7 @@ export { ScoringRulesContent } from "./ScoringRulesContent";
 export { WelcomePage } from "./WelcomePage";
 export { StandingsPage } from "./StandingsPage";
 export { PlayerMatchesPage } from "./PlayerMatchesPage";
-export { GroupTablesPage, type GroupTableRow } from "./GroupTablesPage";
+export { GroupTablesPage } from "./GroupTablesPage";
 export { ParticipatePage } from "./ParticipatePage";
 export { LoginPage } from "./LoginPage";
 export { HallOfFamePage } from "./HallOfFamePage";

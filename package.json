@@ -10,7 +10,9 @@
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
     "preview": "vite preview",
     "fetch-results": "tsx scripts/fetch-results.ts",
-    "fetch-matches": "tsx scripts/fetch-matches.ts"
+    "fetch-matches": "tsx scripts/fetch-matches.ts",
+    "fetch-group-results": "tsx scripts/fetch-group-results.ts",
+    "players-group-results": "tsx scripts/player-group-results.ts roman && tsx scripts/player-group-results.ts dolzhik && tsx scripts/player-group-results.ts pavel && tsx scripts/player-group-results.ts lebed  && tsx scripts/player-group-results.ts khlam  && tsx scripts/player-group-results.ts kirill  && tsx scripts/player-group-results.ts rusyy"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

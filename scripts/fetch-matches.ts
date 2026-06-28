@@ -109,8 +109,8 @@ const GROUP_LETTERS = [
 
 const STAGE_MAP: Record<string, string> = {
   GROUP_STAGE: "Группа",
-  LAST_THIRTY_TWO: "1/16 финала",
-  LAST_SIXTEEN: "1/8 финала",
+  LAST_32: "1/16 финала",
+  LAST_16: "1/8 финала",
   QUARTER_FINALS: "1/4 финала",
   SEMI_FINALS: "1/2 финала",
   THIRD_PLACE: "Матч за 3-е место",
@@ -120,8 +120,12 @@ const STAGE_MAP: Record<string, string> = {
 function stageToPhase(stage: string, group?: string): string | null {
   const base = STAGE_MAP[stage];
   if (!base) return null;
-  if (stage === "GROUP_STAGE" && group && GROUP_LETTERS.includes(group)) {
-    return `${base} ${group}`;
+  if (stage === "GROUP_STAGE" && group) {
+    // API возвращает group в виде "GROUP_A", "GROUP_B" — извлекаем букву
+    const letter = group.replace(/^GROUP_/, "");
+    if (GROUP_LETTERS.includes(letter)) {
+      return `${base} ${letter}`;
+    }
   }
   return base;
 }
@@ -377,9 +381,11 @@ async function main() {
       const old = existingMatches[matchedId];
       const isPlaceholder = !isGroup && (!homeRu || !awayRu);
 
-      // Для групповых матчей сохраняем оригинальный phase (с буквой группы или без),
-      // чтобы не сломать существующие прогнозы
-      const finalPhase = isGroup ? old.phase : phase;
+      // Для групповых матчей используем фазу из API (с буквой группы),
+      // чтобы состав групп соответствовал реальному расписанию.
+      // Если API не вернул букву группы — сохраняем оригинальный phase.
+      const finalPhase =
+        isGroup && phase !== "Группа" ? phase : isGroup ? old.phase : phase;
 
       const updatedEntry: MatchEntry = {
         id: matchedId,
@@ -404,6 +410,9 @@ async function main() {
         }
         if (old.awayTeam !== updatedEntry.awayTeam) {
           changes.push(`гости: ${old.awayTeam} → ${updatedEntry.awayTeam}`);
+        }
+        if (old.phase !== updatedEntry.phase) {
+          changes.push(`фаза: ${old.phase} → ${updatedEntry.phase}`);
         }
         if (old.isPlaceholder && !isPlaceholder) {
           changes.push("placeholder → реальные команды");

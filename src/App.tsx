@@ -44,6 +44,7 @@ import {
   loadAllPlayers,
   loadPlayerFile,
   loadMatchResults,
+  loadGroupPoints,
   isServerReachable,
 } from "./utils/api";
 import usersData from "./users.json";
@@ -206,6 +207,9 @@ export function App() {
   >("idle");
   const [playerLoading, setPlayerLoading] = useState(true);
   const [serverReachable, setServerReachable] = useState<boolean | null>(null);
+  const [groupPointsMap, setGroupPointsMap] = useState<Record<string, number>>(
+    {},
+  );
 
   // On mount, load players from API and match results
   useEffect(() => {
@@ -240,6 +244,14 @@ export function App() {
       setServerReachable(reachable);
     })();
   }, []);
+
+  // Load group stage points for all players
+  useEffect(() => {
+    (async () => {
+      const points = await loadGroupPoints();
+      setGroupPointsMap(points);
+    })();
+  }, [playersLoaded]);
 
   // Load match results from data/results.json (хэш-таблица — O(1) lookup)
   useEffect(() => {
@@ -445,17 +457,21 @@ export function App() {
         name: displayName,
         hasValidData,
         byTier,
-        groupStagePoints: row?.groupStagePoints ?? 0,
+        groupStagePoints:
+          (p.login && groupPointsMap[p.login]) || row?.groupStagePoints || 0,
         playoffBonusPoints: row?.playoffBonusPoints ?? 0,
         topScorerPoints: row?.topScorerPoints ?? 0,
         medalistPoints: row?.medalistPoints ?? 0,
-        total: row?.total ?? 0,
+        total:
+          (row?.total ?? 0) +
+          ((p.login && groupPointsMap[p.login]) || row?.groupStagePoints || 0) -
+          (row?.groupStagePoints ?? 0),
       });
     }
     // Сортировка по убыванию очков
     rows.sort((a, b) => b.total - a.total);
     return rows;
-  }, [players, standings, loginToNickname]);
+  }, [players, standings, loginToNickname, groupPointsMap]);
 
   const activePlayers = useMemo(
     () => players.filter((p) => !p.parseError && p.name.trim()),
@@ -518,9 +534,18 @@ export function App() {
       (isMatchFinished(matchDef) || !isMatchPredictable(matchDef))
     )
       return;
+    const isNonDraw =
+      home !== "" && away !== "" && Number(home) !== Number(away);
+    const clearWinnerMethod =
+      isNonDraw && (matchDef ? isPlayoffPhase(matchDef.phase) : false);
     setScoreDraft((prev) => ({
       ...prev,
-      [matchId]: { ...prev[matchId], h: home, a: away },
+      [matchId]: {
+        ...prev[matchId],
+        h: home,
+        a: away,
+        ...(clearWinnerMethod ? { winner: undefined, method: undefined } : {}),
+      },
     }));
   };
 
@@ -857,7 +882,6 @@ export function App() {
           <GroupTablesPage
             selectedPlayer={selectedPlayer}
             activePlayers={activePlayers}
-            matches={matches}
             selectedPlayerId={selectedPlayerId}
             onPlayerSelect={setSelectedPlayerId}
             currentUserLogin={user?.login}

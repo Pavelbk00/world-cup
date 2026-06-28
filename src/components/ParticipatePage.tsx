@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type {
   MatchId,
   MedalistsPrediction,
@@ -78,8 +79,18 @@ export function ParticipatePage({
   onSave,
   saveStatus,
 }: ParticipatePageProps) {
+  /** Показывать ли матчи группового этапа (по умолчанию скрыты) */
+  const [showGroupStage, setShowGroupStage] = useState(false);
+
   /** Проверяет, начался ли первый матч турнира (блокировка выбора призёров и бомбардира) */
   const isFirstMatchStarted = Date.now() >= FIRST_MATCH.getTime();
+
+  /** Матчи для отображения: плей-офф всегда, групповой этап — только если включён фильтр */
+  const visibleMatches = showGroupStage
+    ? SORTED_MATCHES
+    : SORTED_MATCHES.filter(
+        (m) => !m.phase.trim().toLowerCase().startsWith("группа"),
+      );
 
   // Имя: приоритет из загруженных данных, fallback на nickname из авторизации
   const displayName =
@@ -147,9 +158,21 @@ export function ParticipatePage({
         </div>
       </div>
 
+      {/* Фильтр: показывать групповой этап */}
+      <div className="participate-filter">
+        <label className="participate-filter-label">
+          <input
+            type="checkbox"
+            checked={showGroupStage}
+            onChange={(e) => setShowGroupStage(e.target.checked)}
+          />
+          Показать групповой этап
+        </label>
+      </div>
+
       {/* Сначала матчи */}
       <div className="participate-matches">
-        {SORTED_MATCHES.map((m) => {
+        {visibleMatches.map((m) => {
           const d = scoreDraft[m.id] ?? { h: "", a: "" };
           const isDrawPlayoff =
             isPlayoffPhase(m.phase) &&

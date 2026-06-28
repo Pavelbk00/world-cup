@@ -12,6 +12,7 @@ const DATA_DIR = path.join(__dirname, "..", "data");
 const RESULTS_PATH = path.join(DATA_DIR, "results.json");
 const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
 const OVERRIDES_PATH = path.join(DATA_DIR, "overrides.json");
+const PLAYOFF_RESULTS_PATH = path.join(DATA_DIR, "playoff-results.json");
 
 const API_BASE = "https://api.football-data.org/v4";
 
@@ -152,6 +153,36 @@ async function fetchMatchesFromApi(apiKey: string): Promise<ApiMatch[]> {
   }
 }
 
+function isPlayoffPhase(phase: string): boolean {
+  return !phase.trim().toLowerCase().startsWith("группа");
+}
+
+function determinePlayoffResult(
+  apiMatch: ApiMatch,
+  homeRu: string,
+  awayRu: string,
+): { winner: string; method: "regular" | "extraTime" | "penalties" } | null {
+  const ft = apiMatch.score.fullTime;
+  if (ft.home === null || ft.away === null) return null;
+
+  if (ft.home > ft.away) return { winner: homeRu, method: "regular" };
+  if (ft.away > ft.home) return { winner: awayRu, method: "regular" };
+
+  const et = apiMatch.score.extraTime;
+  if (et.home !== null && et.away !== null) {
+    if (et.home > et.away) return { winner: homeRu, method: "extraTime" };
+    if (et.away > et.home) return { winner: awayRu, method: "extraTime" };
+  }
+
+  const pen = apiMatch.score.penalties;
+  if (pen.home !== null && pen.away !== null) {
+    if (pen.home > pen.away) return { winner: homeRu, method: "penalties" };
+    if (pen.away > pen.home) return { winner: awayRu, method: "penalties" };
+  }
+
+  return null;
+}
+
 // ─── Публичный API ───────────────────────────────────────────────
 
 export interface FetchResult {
@@ -171,8 +202,8 @@ export interface FetchResult {
 }
 
 /**
- * Запрашивает завершённые матчи из API и обновляет data/results.json.
- * Возвращает статистику и список обновлённых матчей.
+ * Запрашивает завершённые матчи из API и обновляет data/results.json
+ * и data/playoff-results.json.
  */
 export async function fetchAndSaveResults(
   apiKey: string,
@@ -185,7 +216,6 @@ export async function fetchAndSaveResults(
     updatedMatches: [],
   };
 
-  // Загружаем каталог матчей
   const matches = JSON.parse(fs.readFileSync(MATCHES_PATH, "utf-8")) as Record<
     string,
     {
@@ -194,17 +224,18 @@ export async function fetchAndSaveResults(
       time: string;
       homeTeam: string;
       awayTeam: string;
+      phase: string;
       isPlaceholder?: boolean;
     }
   >;
 
-  // Загружаем текущие результаты
   const results = JSON.parse(fs.readFileSync(RESULTS_PATH, "utf-8")) as Record<
     string,
     { home: number | null; away: number | null }
   >;
 
-  // Индекс по дате
+  const playoffResults: Record<string, { winner: string; method: string }> = {};
+
   const localByDate = new Map<
     string,
     Array<{
@@ -223,10 +254,8 @@ export async function fetchAndSaveResults(
       .push({ matchId, homeRu: m.homeTeam, awayRu: m.awayTeam });
   }
 
-  // Запрашиваем из API
   const apiMatches = await fetchMatchesFromApi(apiKey);
 
-  // Сопоставляем
   for (const apiMatch of apiMatches) {
     const utcDate = new Date(apiMatch.utcDate);
     const mskDate = new Date(utcDate.getTime() + 3 * 60 * 60 * 1000);
@@ -247,6 +276,13 @@ export async function fetchAndSaveResults(
         const changed = !prev || prev.home !== newHome || prev.away !== newAway;
 
         results[local.matchId] = { home: newHome, away: newAway };
+
+        const matchDef = matches[local.matchId];
+        if (matchDef && isPlayoffPhase(matchDef.phase) && homeRu && awayRu) {
+          const po = determinePlayoffResult(apiMatch, homeRu, awayRu);
+          if (po) playoffResults[local.matchId] = po;
+        }
+
         result.matched++;
 
         if (changed) {
@@ -272,7 +308,6 @@ export async function fetchAndSaveResults(
     if (!found) result.unmatched++;
   }
 
-  // Применяем ручные переопределения (overrides)
   let overrides: Record<string, { home: number; away: number }> = {};
   try {
     overrides = JSON.parse(fs.readFileSync(OVERRIDES_PATH, "utf-8"));
@@ -291,12 +326,42 @@ export async function fetchAndSaveResults(
     }
   }
 
-  // Записываем только если были изменения
+  let existingPlayoff: Record<string, { winner: string; method: string }> = {};
+  try {
+    existingPlayoff = JSON.parse(
+      fs.readFileSync(PLAYOFF_RESULTS_PATH, "utf-8"),
+    );
+  } catch {
+    /* ok */
+  }
+  let playoffChanged = false;
+  for (const [id, po] of Object.entries(playoffResults)) {
+    if (
+      !existingPlayoff[id] ||
+      existingPlayoff[id].winner !== po.winner ||
+      existingPlayoff[id].method !== po.method
+    ) {
+      existingPlayoff[id] = po;
+      playoffChanged = true;
+    }
+  }
+
   if (result.updated > 0 || overridesApplied) {
     fs.writeFileSync(
       RESULTS_PATH,
       JSON.stringify(results, null, 2) + "\n",
       "utf-8",
+    );
+  }
+
+  if (playoffChanged) {
+    fs.writeFileSync(
+      PLAYOFF_RESULTS_PATH,
+      JSON.stringify(existingPlayoff, null, 2) + "\n",
+      "utf-8",
+    );
+    console.log(
+      `🏆 Обновлены результаты плей-офф: ${Object.keys(existingPlayoff).length}`,
     );
   }
 
