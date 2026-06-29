@@ -202,15 +202,32 @@ function scoreGroupStage(
 function scorePlayoffBonus(
   player: PlayerState,
   playoffResults: PlayoffResultMap,
+  matchDefs: Map<string, { homeTeam: string; awayTeam: string }>,
 ): number {
   if (Object.keys(playoffResults).length === 0) return 0;
   let points = 0;
   for (const [matchId, pred] of player.predictions) {
     const actual = playoffResults[matchId];
-    if (!actual) continue;
-    if (!pred.winner || !actual.winner || !actual.method) continue;
-    if (normalizeName(pred.winner) !== normalizeName(actual.winner)) continue;
+    if (!actual?.winner || !actual.method) continue;
+    const def = matchDefs.get(matchId);
+    const predWinner =
+      pred.winner ??
+      (pred.home > pred.away
+        ? def?.homeTeam
+        : pred.home < pred.away
+          ? def?.awayTeam
+          : null);
+    if (!predWinner) continue;
+    if (normalizeName(predWinner) !== normalizeName(actual.winner)) continue;
     const predMethod = pred.method ?? "regular";
+    const predHasWinner = pred.home !== pred.away;
+    if (
+      actual.method === "regular" &&
+      (predHasWinner || predMethod === "regular")
+    ) {
+      points += methodBonus("regular");
+      continue;
+    }
     if (predMethod !== actual.method) continue;
     points += methodBonus(actual.method);
   }
@@ -263,6 +280,12 @@ export function computeStandings(
   const rows: PlayerScoreRow[] = [];
   const { allGroupsFinished, placementsByGroup, qualifiedTeams } =
     computeGroupTopTwo(matches);
+  const matchDefs = new Map(
+    matches.map((m) => [
+      m.def.id,
+      { homeTeam: m.def.homeTeam, awayTeam: m.def.awayTeam },
+    ]),
+  );
   for (const p of players) {
     if (p.parseError) continue;
     let t3 = 0;
@@ -294,7 +317,7 @@ export function computeStandings(
       placementsByGroup,
       qualifiedTeams,
     );
-    const playoffBonusPoints = scorePlayoffBonus(p, playoffResults);
+    const playoffBonusPoints = scorePlayoffBonus(p, playoffResults, matchDefs);
     const topScorerPoints = scoreTopScorer(p);
     const medalistPoints = scoreMedalists(p);
     total +=

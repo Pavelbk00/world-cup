@@ -506,18 +506,31 @@ app.get("/api/points-history", async (req, res) => {
       let playoffBonus = 0;
       let playoffMethod: string | undefined;
 
-      if (isPlayoff && actualPlayoff && pred.winner) {
+      if (isPlayoff && actualPlayoff) {
         const norm = (s: string) => s.trim().toLowerCase();
         const predMethod = pred.method ?? "regular";
-        if (
-          norm(pred.winner) === norm(actualPlayoff.winner) &&
-          predMethod === actualPlayoff.method
-        ) {
-          const m = actualPlayoff.method;
-          if (m === "regular") playoffBonus = 1;
-          else if (m === "extraTime") playoffBonus = 3;
-          else if (m === "penalties") playoffBonus = 5;
-          playoffMethod = m;
+        const predHasWinner = pred.home !== pred.away;
+        const predWinner =
+          pred.winner ??
+          (pred.home > pred.away
+            ? matchDef.homeTeam
+            : pred.home < pred.away
+              ? matchDef.awayTeam
+              : null);
+        if (predWinner && norm(predWinner) === norm(actualPlayoff.winner)) {
+          if (
+            actualPlayoff.method === "regular" &&
+            (predHasWinner || predMethod === "regular")
+          ) {
+            playoffBonus = 1;
+            playoffMethod = "regular";
+          } else if (predMethod === actualPlayoff.method) {
+            const m = actualPlayoff.method;
+            if (m === "regular") playoffBonus = 1;
+            else if (m === "extraTime") playoffBonus = 3;
+            else if (m === "penalties") playoffBonus = 5;
+            playoffMethod = m;
+          }
         }
       }
 
@@ -670,6 +683,15 @@ async function scheduleAutoFetch() {
     await fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8"),
   ) as Record<string, { home: number | null; away: number | null }>;
 
+  let playoffData: Record<string, { winner: string; method: string }> = {};
+  try {
+    playoffData = JSON.parse(
+      await fs.readFile(path.join(DATA_DIR, "playoff-results.json"), "utf-8"),
+    );
+  } catch {
+    /* ok */
+  }
+
   const MATCH_DURATION_MS = 2 * 60 * 60 * 1000; // 2 часа после старта
   const RETRY_DELAY_MS = 5 * 60 * 1000; // повтор через 5 мин, если результата ещё нет
   const now = Date.now();
@@ -689,11 +711,11 @@ async function scheduleAutoFetch() {
     if (match.isPlaceholder) continue;
 
     // Если результат уже есть — пропускаем
-    if (
-      resultsData[matchId]?.home !== null &&
-      resultsData[matchId]?.away !== null
-    )
-      continue;
+    // Для плей-офф также проверяем наличие результата в playoff-results.json
+    const isPo = !match.phase.startsWith("Группа");
+    const hasScore =
+      resultsData[matchId]?.home != null && resultsData[matchId]?.away != null;
+    if (hasScore && (!isPo || !!playoffData[matchId])) continue;
 
     const matchTime = parseMatchDateTime(match.date, match.time);
     if (!matchTime) continue;
@@ -731,23 +753,40 @@ async function scheduleAutoFetch() {
   // Защищает от ситуации, когда сервер перезапустился и все setTimeout потерялись.
   const CATCHUP_INTERVAL_MS = 5 * 60 * 1000;
   setInterval(() => {
-    fs.readFile(path.join(DATA_DIR, "results.json"), "utf-8")
-      .then((raw) => {
+    (async () => {
+      try {
+        const raw = await fs.readFile(
+          path.join(DATA_DIR, "results.json"),
+          "utf-8",
+        );
         const current = JSON.parse(raw) as Record<
           string,
           { home: number | null; away: number | null }
         >;
+
+        let currentPlayoff: Record<string, { winner: string; method: string }> =
+          {};
+        try {
+          currentPlayoff = JSON.parse(
+            await fs.readFile(
+              path.join(DATA_DIR, "playoff-results.json"),
+              "utf-8",
+            ),
+          );
+        } catch {
+          /* ok */
+        }
+
         const nowInner = Date.now();
         let caught = 0;
 
         for (const [matchId, match] of Object.entries(matchesCatalog)) {
           if (match.isPlaceholder) continue;
-          if (fetching.has(matchId)) continue; // Уже ждём ответ от API
-          if (
-            current[matchId]?.home !== null &&
-            current[matchId]?.away !== null
-          )
-            continue;
+          if (fetching.has(matchId)) continue;
+          const isPo = !match.phase.startsWith("Группа");
+          const hasScore =
+            current[matchId]?.home != null && current[matchId]?.away != null;
+          if (hasScore && (!isPo || !!currentPlayoff[matchId])) continue;
 
           const matchTime = parseMatchDateTime(match.date, match.time);
           if (!matchTime) continue;
@@ -763,10 +802,10 @@ async function scheduleAutoFetch() {
             `🤖 Catch-up: ${caught} матчей без результата, запускаем fetch`,
           );
         }
-      })
-      .catch(() => {
+      } catch {
         /* ignore — проверим на следующей итерации */
-      });
+      }
+    })();
   }, CATCHUP_INTERVAL_MS);
 
   async function doFetch(
@@ -779,11 +818,14 @@ async function scheduleAutoFetch() {
       console.log(`🤖 Запрос результатов (${home} vs ${away})...`);
       const r = await fetchAndSaveResults(key);
 
-      if (r.updated > 0) {
+      if (r.updated > 0 || r.playoffUpdated) {
         for (const m of r.updatedMatches) {
           console.log(
             `   🔄 ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`,
           );
+        }
+        if (r.playoffUpdated) {
+          console.log(`   🏆 Обновлены результаты плей-офф для ${matchId}`);
         }
         fetching.delete(matchId); // Результат получен — освобождаем слот
       } else {

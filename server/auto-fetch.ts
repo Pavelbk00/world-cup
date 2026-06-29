@@ -190,6 +190,7 @@ export interface FetchResult {
   updated: number;
   unchanged: number;
   unmatched: number;
+  playoffUpdated: boolean;
   updatedMatches: Array<{
     matchId: string;
     home: string;
@@ -213,6 +214,7 @@ export async function fetchAndSaveResults(
     updated: 0,
     unchanged: 0,
     unmatched: 0,
+    playoffUpdated: false,
     updatedMatches: [],
   };
 
@@ -364,6 +366,8 @@ export async function fetchAndSaveResults(
       `🏆 Обновлены результаты плей-офф: ${Object.keys(existingPlayoff).length}`,
     );
   }
+
+  result.playoffUpdated = playoffChanged;
 
   return result;
 }
