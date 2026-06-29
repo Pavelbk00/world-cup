@@ -461,6 +461,8 @@ app.get("/api/points-history", async (req, res) => {
     phase: string;
     actualHome: number;
     actualAway: number;
+    playoffWinner?: string;
+    playoffMethod?: string;
     entries: Array<{
       player: string;
       login: string;
@@ -469,6 +471,8 @@ app.get("/api/points-history", async (req, res) => {
       points: number;
       playoffBonus?: number;
       playoffMethod?: string;
+      predWinner?: string;
+      predMethod?: string;
     }>;
   };
 
@@ -504,7 +508,11 @@ app.get("/api/points-history", async (req, res) => {
 
       if (isPlayoff && actualPlayoff && pred.winner) {
         const norm = (s: string) => s.trim().toLowerCase();
-        if (norm(pred.winner) === norm(actualPlayoff.winner)) {
+        const predMethod = pred.method ?? "regular";
+        if (
+          norm(pred.winner) === norm(actualPlayoff.winner) &&
+          predMethod === actualPlayoff.method
+        ) {
           const m = actualPlayoff.method;
           if (m === "regular") playoffBonus = 1;
           else if (m === "extraTime") playoffBonus = 3;
@@ -524,6 +532,8 @@ app.get("/api/points-history", async (req, res) => {
           points: totalPoints,
           playoffBonus: playoffBonus || undefined,
           playoffMethod,
+          predWinner: pred.winner,
+          predMethod: pred.method,
         });
       }
     }
@@ -545,6 +555,8 @@ app.get("/api/points-history", async (req, res) => {
       phase: matchDef.phase,
       actualHome: result.home,
       actualAway: result.away,
+      playoffWinner: actualPlayoff?.winner,
+      playoffMethod: actualPlayoff?.method,
       entries,
     });
   }
@@ -557,6 +569,19 @@ app.get("/api/points-history", async (req, res) => {
   });
 
   res.json(history);
+});
+
+// GET /api/playoff-results — результаты плей-офф (победитель + способ)
+app.get("/api/playoff-results", async (_req, res) => {
+  try {
+    const raw = await fs.readFile(
+      path.join(DATA_DIR, "playoff-results.json"),
+      "utf-8",
+    );
+    res.json(JSON.parse(raw));
+  } catch {
+    res.json({});
+  }
 });
 
 // GET /api/group-results — реальные групповые таблицы (из group-results.json)

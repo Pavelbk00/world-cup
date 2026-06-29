@@ -2105,13 +2105,26 @@ margin: 0;
   flex-shrink: 0;
 }
 
+.ph-card-playoff {
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #facc15;
+  text-shadow: 0 0 6px rgba(250, 204, 21, 0.2);
+}
+
+.ph-entry-pred-playoff {
+  font-size: 0.75rem;
+  color: #fbbf24;
+  opacity: 0.85;
+}
+
 .ph-card-entries {
   padding: 0.15rem 0;
 }
 
 .ph-entry {
   display: grid;
-  grid-template-columns: 200px 1fr 100px;
+  grid-template-columns: 200px 1fr 150px;
   align-items: center;
   padding: 0.65rem 0.85rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -2140,10 +2153,20 @@ margin: 0;
 }
 
 .ph-entry-pts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
   font-weight: 700;
   font-size: 0.88rem;
-  white-space: nowrap;
-  text-align: right;
+  padding-right: 12px;
+}
+
+.ph-entry-pts-breakdown {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: #94a3b8;
+  white-space: normal;
 }
 
 .ph-pts-1 {
@@ -2166,6 +2189,11 @@ margin: 0;
   color: #f97316;
 }
 
+.ph-pts-11 {
+  color: #f59e0b;
+  text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+}
+
 .ph-head {
   align-items: center;
 }
@@ -2186,7 +2214,7 @@ margin: 0;
     font-size: 0.82rem;
   }
   .ph-entry {
-    grid-template-columns: 1fr 1fr 80px;
+    grid-template-columns: 1fr 1fr 150px;
     padding: 0.65rem 0.65rem;
     font-size: 0.8rem;
   }

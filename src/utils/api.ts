@@ -168,6 +168,8 @@ export interface PointsHistoryEntry {
   points: number;
   playoffBonus?: number;
   playoffMethod?: string;
+  predWinner?: string;
+  predMethod?: string;
 }
 
 export interface PointsHistoryRow {
@@ -179,6 +181,8 @@ export interface PointsHistoryRow {
   phase: string;
   actualHome: number;
   actualAway: number;
+  playoffWinner?: string;
+  playoffMethod?: string;
   entries: PointsHistoryEntry[];
 }
 
@@ -251,6 +255,23 @@ export async function loadGroupPoints(): Promise<Record<string, number>> {
     const res = await fetch(`${API_BASE}/group-points`);
     if (!res.ok) return {};
     return (await res.json()) as Record<string, number>;
+  } catch {
+    return {};
+  }
+}
+
+export interface PlayoffResultMap {
+  [matchId: string]: {
+    winner: string;
+    method: "regular" | "extraTime" | "penalties";
+  };
+}
+
+export async function loadPlayoffResultsApi(): Promise<PlayoffResultMap> {
+  try {
+    const res = await fetch(`${API_BASE}/playoff-results`);
+    if (!res.ok) return {};
+    return (await res.json()) as PlayoffResultMap;
   } catch {
     return {};
   }

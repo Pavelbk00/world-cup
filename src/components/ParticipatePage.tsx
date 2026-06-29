@@ -245,32 +245,48 @@ export function ParticipatePage({
                 <div className="playoff-prediction">
                   <label className="playoff-winner-label">
                     Победитель:
-                    <select
-                      value={d.winner ?? ""}
-                      onChange={(e) => onWinnerChange(m.id, e.target.value)}
-                      className="playoff-select"
-                    >
-                      <option value="">— выберите —</option>
-                      <option value={m.homeTeam}>{m.homeTeam}</option>
-                      <option value={m.awayTeam}>{m.awayTeam}</option>
-                    </select>
+                    {isMatchFinished(m) ? (
+                      <span className="playoff-value">
+                        {d.winner || "— не указан —"}
+                      </span>
+                    ) : (
+                      <select
+                        value={d.winner ?? ""}
+                        onChange={(e) => onWinnerChange(m.id, e.target.value)}
+                        className="playoff-select"
+                      >
+                        <option value="">— выберите —</option>
+                        <option value={m.homeTeam}>{m.homeTeam}</option>
+                        <option value={m.awayTeam}>{m.awayTeam}</option>
+                      </select>
+                    )}
                   </label>
                   <label className="playoff-method-label">
                     Способ:
-                    <select
-                      value={d.method ?? ""}
-                      onChange={(e) =>
-                        onMethodChange(
-                          m.id,
-                          e.target.value as ScoreDraftEntry["method"],
-                        )
-                      }
-                      className="playoff-select"
-                    >
-                      <option value="">— выберите —</option>
-                      <option value="extraTime">Дополнительное время</option>
-                      <option value="penalties">Серия пенальти</option>
-                    </select>
+                    {isMatchFinished(m) ? (
+                      <span className="playoff-value">
+                        {d.method
+                          ? d.method === "extraTime"
+                            ? "Дополнительное время"
+                            : "Серия пенальти"
+                          : "— не указан —"}
+                      </span>
+                    ) : (
+                      <select
+                        value={d.method ?? ""}
+                        onChange={(e) =>
+                          onMethodChange(
+                            m.id,
+                            e.target.value as ScoreDraftEntry["method"],
+                          )
+                        }
+                        className="playoff-select"
+                      >
+                        <option value="">— выберите —</option>
+                        <option value="extraTime">Дополнительное время</option>
+                        <option value="penalties">Серия пенальти</option>
+                      </select>
+                    )}
                   </label>
                 </div>
               )}

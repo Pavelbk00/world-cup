@@ -7,6 +7,8 @@ import {
   isPlayoffPhase,
 } from "./matchUtils";
 import { computeStandings } from "./scoring";
+import type { PlayoffResultMap } from "./utils/api";
+import { loadPlayoffResultsApi } from "./utils/api";
 import type {
   MatchDef,
   MatchId,
@@ -210,6 +212,8 @@ export function App() {
   const [groupPointsMap, setGroupPointsMap] = useState<Record<string, number>>(
     {},
   );
+  const [playoffResults, setPlayoffResults] = useState<PlayoffResultMap>({});
+  const [playoffTick, setPlayoffTick] = useState(0);
 
   // On mount, load players from API and match results
   useEffect(() => {
@@ -279,9 +283,18 @@ export function App() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const data = await loadPlayoffResultsApi();
+      setPlayoffResults(data);
+      setPlayoffTick((n) => n + 1);
+    })();
+  }, []);
+
   const standings = useMemo(
-    () => computeStandings(matches, players),
-    [matches, players],
+    () => computeStandings(matches, players, playoffResults),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [matches, players, playoffTick, playoffResults],
   );
 
   const [page, setPage] = useState<AppPage>(() => {

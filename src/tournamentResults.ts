@@ -1,13 +1,33 @@
-import type { MedalistsPrediction, PlayerPrediction } from "./types";
+import type { MedalistsPrediction } from "./types";
 
-/** Фактические результаты матчей плей-офф для бонуса за проход (хэш-таблица matchId -> результат). */
-export const PLAYOFF_RESULTS: Record<string, PlayerPrediction & { winner: string; method: "regular" | "extraTime" | "penalties" }> = {};
+export const PLAYOFF_RESULTS: Record<
+  string,
+  { winner: string; method: "regular" | "extraTime" | "penalties" }
+> = {};
 
-/** Официальный обладатель "Золотой бутсы" ФИФА. */
+export async function loadPlayoffResults(): Promise<void> {
+  try {
+    const res = await fetch("/api/playoff-results");
+    if (!res.ok) return;
+    const data = (await res.json()) as Record<
+      string,
+      { winner: string; method: string }
+    >;
+    for (const key of Object.keys(PLAYOFF_RESULTS)) delete PLAYOFF_RESULTS[key];
+    for (const [id, v] of Object.entries(data)) {
+      if (v?.winner && v?.method)
+        PLAYOFF_RESULTS[id] = v as {
+          winner: string;
+          method: "regular" | "extraTime" | "penalties";
+        };
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 export const GOLDEN_BOOT_WINNER: string | null = null;
 
-/** Голы игроков на турнире (без пенальти в послематчевых сериях). */
 export const PLAYER_GOALS: Record<string, number> = {};
 
-/** Фактические призеры турнира. */
 export const MEDALISTS_RESULT: MedalistsPrediction | null = null;

@@ -95,6 +95,18 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                 </div>
                 <div className="ph-card-score">
                   Итог: {row.actualHome}:{row.actualAway}
+                  {row.actualHome === row.actualAway &&
+                    row.playoffWinner &&
+                    row.playoffMethod && (
+                      <span className="ph-card-playoff">
+                        {" "}
+                        (Победитель: {row.playoffWinner},{" "}
+                        {row.playoffMethod === "penalties"
+                          ? "по пенальти"
+                          : "в доп. время"}
+                        )
+                      </span>
+                    )}
                 </div>
               </div>
               <div className="ph-card-entries">
@@ -103,15 +115,27 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                     <span className="ph-entry-name">{e.player}</span>
                     <span className="ph-entry-pred">
                       прогноз {e.predHome}:{e.predAway}
+                      {e.predWinner && e.predHome === e.predAway && (
+                        <span className="ph-entry-pred-playoff">
+                          {" "}
+                          (Победитель: {e.predWinner},{" "}
+                          {e.predMethod === "penalties"
+                            ? "по пенальти"
+                            : e.predMethod === "extraTime"
+                              ? "в доп. время"
+                              : "в осн. время"}
+                          )
+                        </span>
+                      )}
                     </span>
                     <span className={`ph-entry-pts ph-pts-${e.points}`}>
-                      {e.points ? `+${e.points}` : e.points}
+                      <span>{e.points ? `+${e.points}` : e.points}</span>
                       {e.playoffBonus && (
-                        <span className="text-sm text-slate-400 ml-1">
-                          ({e.points - e.playoffBonus} счет
+                        <span className="ph-entry-pts-breakdown">
+                          {e.points - e.playoffBonus} счет
                           {e.playoffMethod === "regular" && " + 1 осн. время"}
                           {e.playoffMethod === "extraTime" && " + 3 доп. время"}
-                          {e.playoffMethod === "penalties" && " + 5 пенальти"})
+                          {e.playoffMethod === "penalties" && " + 5 пенальти"}
                         </span>
                       )}
                     </span>
