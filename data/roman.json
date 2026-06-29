@@ -281,6 +281,22 @@
     "wc-073": {
       "home": 0,
       "away": 2
+    },
+    "wc-074": {
+      "home": 1,
+      "away": 1,
+      "winner": "Бразилия",
+      "method": "extraTime"
+    },
+    "wc-075": {
+      "home": 3,
+      "away": 0
+    },
+    "wc-076": {
+      "home": 1,
+      "away": 1,
+      "winner": "Марокко",
+      "method": "penalties"
     }
   },
   "groupStandings": [],

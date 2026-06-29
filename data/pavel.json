@@ -296,7 +296,37 @@
     },
     "wc-074": {
       "home": 2,
+      "away": 1
+    },
+    "wc-075": {
+      "home": 3,
       "away": 0
+    },
+    "wc-076": {
+      "home": 3,
+      "away": 1
+    },
+    "wc-077": {
+      "home": 1,
+      "away": 2
+    },
+    "wc-078": {
+      "home": 3,
+      "away": 0
+    },
+    "wc-079": {
+      "home": 0,
+      "away": 0,
+      "winner": "Мексика",
+      "method": "penalties"
+    },
+    "wc-080": {
+      "home": 3,
+      "away": 0
+    },
+    "wc-081": {
+      "home": 2,
+      "away": 1
     }
   },
   "groupStandings": [],

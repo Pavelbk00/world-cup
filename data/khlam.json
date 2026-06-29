@@ -293,6 +293,10 @@
     "wc-073": {
       "home": 0,
       "away": 2
+    },
+    "wc-074": {
+      "home": 3,
+      "away": 1
     }
   },
   "groupStandings": [],
