@@ -257,7 +257,10 @@ app.post("/api/players/save", async (req, res) => {
     let existingData: Record<string, unknown> | null = await getPlayer(login);
 
     // Собираем существующие прогнозы по matchId для начавшихся матчей
-    const existingPredsMap = new Map<string, { home: number; away: number }>();
+    const existingPredsMap = new Map<
+      string,
+      { home: number; away: number; winner?: string; method?: string }
+    >();
     if (existingData) {
       const preds = existingData.predictions;
       if (preds && typeof preds === "object" && !Array.isArray(preds)) {
@@ -270,9 +273,17 @@ app.post("/api/players/save", async (req, res) => {
             typeof (val as Record<string, unknown>).home === "number" &&
             typeof (val as Record<string, unknown>).away === "number"
           ) {
+            const v = val as {
+              home: number;
+              away: number;
+              winner?: string;
+              method?: string;
+            };
             existingPredsMap.set(matchId, {
-              home: (val as { home: number; away: number }).home,
-              away: (val as { home: number; away: number }).away,
+              home: v.home,
+              away: v.away,
+              ...(v.winner ? { winner: v.winner } : {}),
+              ...(v.method ? { method: v.method } : {}),
             });
           }
         }
@@ -308,10 +319,18 @@ app.post("/api/players/save", async (req, res) => {
         if (hasMatchStarted(matchId)) {
           // Матч уже начался — берём существующий прогноз (или 0:0)
           const existing = existingPredsMap.get(matchId);
-          validatedPredictions[matchId] = {
+          const preserved: {
+            home: number;
+            away: number;
+            winner?: string;
+            method?: string;
+          } = {
             home: existing?.home ?? 0,
             away: existing?.away ?? 0,
           };
+          if (existing?.winner) preserved.winner = existing.winner;
+          if (existing?.method) preserved.method = existing.method;
+          validatedPredictions[matchId] = preserved;
         } else {
           // Матч ещё не начался — используем как есть
           const validated: {
