@@ -13,6 +13,7 @@ const RESULTS_PATH = path.join(DATA_DIR, "results.json");
 const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
 const OVERRIDES_PATH = path.join(DATA_DIR, "overrides.json");
 const PLAYOFF_RESULTS_PATH = path.join(DATA_DIR, "playoff-results.json");
+const PLAYOFF_OVERRIDES_PATH = path.join(DATA_DIR, "playoff-overrides.json");
 
 const API_BASE = "https://api.football-data.org/v4";
 
@@ -91,6 +92,7 @@ interface ApiMatch {
   score: {
     halfTime: { home: number | null; away: number | null };
     fullTime: { home: number | null; away: number | null };
+    regularTime?: { home: number | null; away: number | null };
     extraTime: { home: number | null; away: number | null };
     penalties: { home: number | null; away: number | null };
   };
@@ -162,11 +164,11 @@ function determinePlayoffResult(
   homeRu: string,
   awayRu: string,
 ): { winner: string; method: "regular" | "extraTime" | "penalties" } | null {
-  const ft = apiMatch.score.fullTime;
-  if (ft.home === null || ft.away === null) return null;
+  const reg = apiMatch.score.regularTime ?? apiMatch.score.fullTime;
+  if (reg.home === null || reg.away === null) return null;
 
-  if (ft.home > ft.away) return { winner: homeRu, method: "regular" };
-  if (ft.away > ft.home) return { winner: awayRu, method: "regular" };
+  if (reg.home > reg.away) return { winner: homeRu, method: "regular" };
+  if (reg.away > reg.home) return { winner: awayRu, method: "regular" };
 
   const et = apiMatch.score.extraTime;
   if (et.home !== null && et.away !== null) {
@@ -271,8 +273,9 @@ export async function fetchAndSaveResults(
 
     for (const local of locals) {
       if (local.homeRu === homeRu && local.awayRu === awayRu) {
-        const newHome = apiMatch.score.fullTime.home;
-        const newAway = apiMatch.score.fullTime.away;
+        const reg = apiMatch.score.regularTime ?? apiMatch.score.fullTime;
+        const newHome = reg.home;
+        const newAway = reg.away;
         const prev = results[local.matchId];
 
         const changed = !prev || prev.home !== newHome || prev.away !== newAway;
@@ -336,8 +339,21 @@ export async function fetchAndSaveResults(
   } catch {
     /* ok */
   }
+
+  let playoffOverrides: Record<string, { winner: string; method: string }> = {};
+  try {
+    playoffOverrides = JSON.parse(
+      fs.readFileSync(PLAYOFF_OVERRIDES_PATH, "utf-8"),
+    );
+  } catch {
+    /* ok */
+  }
+
   let playoffChanged = false;
-  for (const [id, po] of Object.entries(playoffResults)) {
+  for (const [id, po] of Object.entries({
+    ...playoffResults,
+    ...playoffOverrides,
+  })) {
     if (
       !existingPlayoff[id] ||
       existingPlayoff[id].winner !== po.winner ||
