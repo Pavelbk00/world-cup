@@ -301,6 +301,20 @@
     "wc-076": {
       "home": 3,
       "away": 1
+    },
+    "wc-078": {
+      "home": 4,
+      "away": 1
+    },
+    "wc-079": {
+      "home": 1,
+      "away": 1,
+      "winner": "Эквадор",
+      "method": "extraTime"
+    },
+    "wc-080": {
+      "home": 2,
+      "away": 0
     }
   },
   "groupStandings": [],

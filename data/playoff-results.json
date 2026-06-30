@@ -14,5 +14,9 @@
   "wc-076": {
     "winner": "Марокко",
     "method": "penalties"
+  },
+  "wc-077": {
+    "winner": "Норвегия",
+    "method": "regular"
   }
 }
