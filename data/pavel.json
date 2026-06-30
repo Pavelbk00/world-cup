@@ -308,7 +308,9 @@
     },
     "wc-077": {
       "home": 1,
-      "away": 2
+      "away": 1,
+      "winner": "Норвегия",
+      "method": "extraTime"
     },
     "wc-078": {
       "home": 3,
@@ -327,6 +329,36 @@
     "wc-081": {
       "home": 2,
       "away": 1
+    },
+    "wc-082": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-083": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-084": {
+      "home": 1,
+      "away": 1,
+      "winner": "Португалия",
+      "method": "penalties"
+    },
+    "wc-085": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-086": {
+      "home": 0,
+      "away": 1
+    },
+    "wc-087": {
+      "home": 3,
+      "away": 0
+    },
+    "wc-088": {
+      "home": 2,
+      "away": 0
     }
   },
   "groupStandings": [],
