@@ -426,17 +426,18 @@ export function App() {
   }, []);
 
   const lastFinishedMatchLabel = useMemo(() => {
+    const toTime = (m: MatchResultState) => {
+      const [d, mo, y] = m.def.date.split(".").map(Number);
+      const [h, mi] = m.def.time.split(":").map(Number);
+      return new Date(y, mo - 1, d, h, mi).getTime();
+    };
     const finished = matches
       .filter((m) => {
         const h = parseInt(m.homeInput, 10);
         const a = parseInt(m.awayInput, 10);
         return !isNaN(h) && !isNaN(a);
       })
-      .sort((a, b) => {
-        const dateA = a.def.date + " " + a.def.time;
-        const dateB = b.def.date + " " + b.def.time;
-        return dateA.localeCompare(dateB);
-      });
+      .sort((a, b) => toTime(a) - toTime(b));
     if (finished.length === 0) return null;
     const last = finished[finished.length - 1];
     return last.def.homeTeam + " – " + last.def.awayTeam;
