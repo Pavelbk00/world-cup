@@ -31,6 +31,10 @@
     "winner": "Англия",
     "method": "regular"
   },
+  "wc-081": {
+    "winner": "Бельгия",
+    "method": "extraTime"
+  },
   "wc-082": {
     "winner": "США",
     "method": "regular"
