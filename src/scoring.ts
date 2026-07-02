@@ -234,6 +234,54 @@ function scorePlayoffBonus(
   return points;
 }
 
+function scoreAdvancement(
+  player: PlayerState,
+  matches: MatchResultState[],
+  playoffResults: PlayoffResultMap,
+): number {
+  let points = 0;
+  for (const m of matches) {
+    if (isGroupPhase(m.def.phase)) continue;
+    const res = resultFromState(m);
+    if (!res) continue;
+    const pred = player.predictions.get(m.def.id);
+    if (!pred) continue;
+
+    const actualPlayoff = playoffResults[m.def.id];
+
+    let actualAdvancer: string | null = null;
+    let predAdvancer: string | null = null;
+
+    if (actualPlayoff?.winner) {
+      actualAdvancer = actualPlayoff.winner;
+      predAdvancer =
+        pred.winner ??
+        (pred.home > pred.away
+          ? m.def.homeTeam
+          : pred.home < pred.away
+            ? m.def.awayTeam
+            : null);
+    } else if (res.home !== res.away) {
+      actualAdvancer = res.home > res.away ? m.def.homeTeam : m.def.awayTeam;
+      predAdvancer =
+        pred.home > pred.away
+          ? m.def.homeTeam
+          : pred.home < pred.away
+            ? m.def.awayTeam
+            : (pred.winner ?? null);
+    }
+
+    if (
+      predAdvancer &&
+      actualAdvancer &&
+      normalizeName(predAdvancer) === normalizeName(actualAdvancer)
+    ) {
+      points += 1;
+    }
+  }
+  return points;
+}
+
 function scoreTopScorer(player: PlayerState): number {
   if (!player.topScorer) return 0;
   const key = player.topScorer.trim();
@@ -318,10 +366,15 @@ export function computeStandings(
       qualifiedTeams,
     );
     const playoffBonusPoints = scorePlayoffBonus(p, playoffResults, matchDefs);
+    const advancementPoints = scoreAdvancement(p, matches, playoffResults);
     const topScorerPoints = scoreTopScorer(p);
     const medalistPoints = scoreMedalists(p);
     total +=
-      groupStagePoints + playoffBonusPoints + topScorerPoints + medalistPoints;
+      groupStagePoints +
+      playoffBonusPoints +
+      advancementPoints +
+      topScorerPoints +
+      medalistPoints;
 
     rows.push({
       playerId: p.id,
@@ -329,6 +382,7 @@ export function computeStandings(
       byTier: { t3, t2, t1, t0 },
       groupStagePoints,
       playoffBonusPoints,
+      advancementPoints,
       topScorerPoints,
       medalistPoints,
       total,

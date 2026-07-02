@@ -490,6 +490,7 @@ app.get("/api/points-history", async (req, res) => {
       points: number;
       playoffBonus?: number;
       playoffMethod?: string;
+      advancementBonus?: number;
       predWinner?: string;
       predMethod?: string;
     }>;
@@ -524,36 +525,70 @@ app.get("/api/points-history", async (req, res) => {
 
       let playoffBonus = 0;
       let playoffMethod: string | undefined;
+      let advancementBonus = 0;
 
-      if (isPlayoff && actualPlayoff) {
+      if (isPlayoff) {
         const norm = (s: string) => s.trim().toLowerCase();
-        const predMethod = pred.method ?? "regular";
-        const predHasWinner = pred.home !== pred.away;
-        const predWinner =
-          pred.winner ??
-          (pred.home > pred.away
-            ? matchDef.homeTeam
-            : pred.home < pred.away
-              ? matchDef.awayTeam
-              : null);
-        if (predWinner && norm(predWinner) === norm(actualPlayoff.winner)) {
-          if (
-            actualPlayoff.method === "regular" &&
-            (predHasWinner || predMethod === "regular")
-          ) {
-            playoffBonus = 1;
-            playoffMethod = "regular";
-          } else if (predMethod === actualPlayoff.method) {
-            const m = actualPlayoff.method;
-            if (m === "regular") playoffBonus = 1;
-            else if (m === "extraTime") playoffBonus = 3;
-            else if (m === "penalties") playoffBonus = 5;
-            playoffMethod = m;
+        let actualAdvancer: string | null = null;
+        let predAdvancer: string | null = null;
+
+        if (actualPlayoff?.winner) {
+          actualAdvancer = actualPlayoff.winner;
+          predAdvancer =
+            pred.winner ??
+            (pred.home > pred.away
+              ? matchDef.homeTeam
+              : pred.home < pred.away
+                ? matchDef.awayTeam
+                : null);
+        } else if (result.home !== result.away) {
+          actualAdvancer =
+            result.home > result.away ? matchDef.homeTeam : matchDef.awayTeam;
+          predAdvancer =
+            pred.home > pred.away
+              ? matchDef.homeTeam
+              : pred.home < pred.away
+                ? matchDef.awayTeam
+                : (pred.winner ?? null);
+        }
+
+        if (
+          predAdvancer &&
+          actualAdvancer &&
+          norm(predAdvancer) === norm(actualAdvancer)
+        ) {
+          advancementBonus = 1;
+        }
+
+        if (actualPlayoff) {
+          const predMethod = pred.method ?? "regular";
+          const predHasWinner = pred.home !== pred.away;
+          const predWinner =
+            pred.winner ??
+            (pred.home > pred.away
+              ? matchDef.homeTeam
+              : pred.home < pred.away
+                ? matchDef.awayTeam
+                : null);
+          if (predWinner && norm(predWinner) === norm(actualPlayoff.winner)) {
+            if (
+              actualPlayoff.method === "regular" &&
+              (predHasWinner || predMethod === "regular")
+            ) {
+              playoffBonus = 1;
+              playoffMethod = "regular";
+            } else if (predMethod === actualPlayoff.method) {
+              const m = actualPlayoff.method;
+              if (m === "regular") playoffBonus = 1;
+              else if (m === "extraTime") playoffBonus = 3;
+              else if (m === "penalties") playoffBonus = 5;
+              playoffMethod = m;
+            }
           }
         }
       }
 
-      const totalPoints = points + playoffBonus;
+      const totalPoints = points + playoffBonus + advancementBonus;
 
       if (totalPoints > 0 || includeZero) {
         entries.push({
@@ -564,6 +599,7 @@ app.get("/api/points-history", async (req, res) => {
           points: totalPoints,
           playoffBonus: playoffBonus || undefined,
           playoffMethod,
+          advancementBonus: advancementBonus || undefined,
           predWinner: pred.winner,
           predMethod: pred.method,
         });

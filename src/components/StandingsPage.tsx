@@ -6,6 +6,7 @@ interface StandingsPageProps {
     byTier: { t3: number; t2: number; t1: number; t0: number };
     groupStagePoints: number;
     playoffBonusPoints: number;
+    advancementPoints: number;
     topScorerPoints: number;
     medalistPoints: number;
     total: number;
@@ -35,6 +36,7 @@ export function StandingsPage({
               <th className="num">Исход (1)</th>
               <th className="num">Группы</th>
               <th className="num">Способ</th>
+              <th className="num">Проход</th>
               <th className="num">Бомбардир</th>
               <th className="num">Призёры</th>
               <th>Очки</th>
@@ -62,6 +64,7 @@ export function StandingsPage({
                 <td className="num">{row.byTier.t1}</td>
                 <td className="num">{row.groupStagePoints}</td>
                 <td className="num">{row.playoffBonusPoints}</td>
+                <td className="num">{row.advancementPoints}</td>
                 <td className="num">{row.topScorerPoints}</td>
                 <td className="num">{row.medalistPoints}</td>
                 <td className="total">{row.total}</td>

@@ -452,6 +452,7 @@ export function App() {
       byTier: { t3: number; t2: number; t1: number; t0: number };
       groupStagePoints: number;
       playoffBonusPoints: number;
+      advancementPoints: number;
       topScorerPoints: number;
       medalistPoints: number;
       total: number;
@@ -474,6 +475,7 @@ export function App() {
         groupStagePoints:
           (p.login && groupPointsMap[p.login]) || row?.groupStagePoints || 0,
         playoffBonusPoints: row?.playoffBonusPoints ?? 0,
+        advancementPoints: row?.advancementPoints ?? 0,
         topScorerPoints: row?.topScorerPoints ?? 0,
         medalistPoints: row?.medalistPoints ?? 0,
         total:

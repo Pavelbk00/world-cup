@@ -168,6 +168,7 @@ export interface PointsHistoryEntry {
   points: number;
   playoffBonus?: number;
   playoffMethod?: string;
+  advancementBonus?: number;
   predWinner?: string;
   predMethod?: string;
 }

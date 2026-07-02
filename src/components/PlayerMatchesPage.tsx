@@ -1,16 +1,21 @@
 import { useMemo } from "react";
-import type { MatchResultState, PlayerState, Score } from "../types";
+import type {
+  MatchResultState,
+  PlayerPrediction,
+  PlayerState,
+  Score,
+} from "../types";
 import { resultFromState } from "../matchResultUtils";
 import { pointsForSingleMatch } from "../scoring";
+import { isPlayoffPhase } from "../matchUtils";
 
 interface PlayerMatchRow {
   match: MatchResultState;
-  pred: Score | undefined;
+  pred: PlayerPrediction | undefined;
   actual: Score | null;
   points: number | null;
 }
 
-/** Парсит "DD.MM.YYYY HH:MM" в число для сравнения */
 function matchDateTimeToMs(dateStr: string, timeStr: string): number {
   const [day, month, year] = dateStr.split(".").map(Number);
   const [hours, minutes] = timeStr.split(":").map(Number);
@@ -20,7 +25,6 @@ function matchDateTimeToMs(dateStr: string, timeStr: string): number {
 interface PlayerMatchesPageProps {
   selectedPlayer: PlayerState;
   matches: MatchResultState[];
-  /** Логин текущего пользователя (для определения прав доступа) */
   currentUserLogin?: string;
 }
 
@@ -29,7 +33,6 @@ export function PlayerMatchesPage({
   matches,
   currentUserLogin,
 }: PlayerMatchesPageProps) {
-  // Пашок видит все прогнозы без ограничений
   const isPavel = currentUserLogin === "pavel";
   const isOwner = selectedPlayer.login === currentUserLogin || isPavel;
   const canSeeAll = isOwner || isPavel;
@@ -42,7 +45,6 @@ export function PlayerMatchesPage({
       const points = pointsData?.points ?? null;
       return { match: m, pred, actual, points };
     });
-    // Сортируем по дате/времени матча (возрастание)
     rows.sort((a, b) => {
       const aMs = matchDateTimeToMs(a.match.def.date, a.match.def.time);
       const bMs = matchDateTimeToMs(b.match.def.date, b.match.def.time);
@@ -94,16 +96,36 @@ export function PlayerMatchesPage({
                   </div>
                 </td>
                 <td className="num">
-                  {canSeeAll || actual
-                    ? pred
-                      ? `${pred.home}:${pred.away}`
-                      : "—"
-                    : "🔒"}
+                  {canSeeAll || actual ? (
+                    pred ? (
+                      isPlayoffPhase(match.def.phase) &&
+                      pred.home === pred.away &&
+                      pred.winner &&
+                      pred.method ? (
+                        <>
+                          {`${pred.home}:${pred.away} `}
+                          <span className="ph-entry-pred-playoff">
+                            (Победитель: {pred.winner},{" "}
+                            {pred.method === "penalties"
+                              ? "по пенальти"
+                              : pred.method === "extraTime"
+                                ? "в доп. время"
+                                : "в осн. время"}
+                            )
+                          </span>
+                        </>
+                      ) : (
+                        `${pred.home}:${pred.away}`
+                      )
+                    ) : (
+                      "—"
+                    )
+                  ) : (
+                    "🔒"
+                  )}
                 </td>
                 <td className="num">
-                  {actual
-                    ? `${actual.home}:${actual.away}`
-                    : "нет результата"}
+                  {actual ? `${actual.home}:${actual.away}` : "нет результата"}
                 </td>
                 <td className="total">{points ?? "—"}</td>
               </tr>

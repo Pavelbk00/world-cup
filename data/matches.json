@@ -626,7 +626,7 @@
   "wc-079": {
     "id": "wc-079",
     "date": "01.07.2026",
-    "time": "04:00",
+    "time": "05:00",
     "homeTeam": "Мексика",
     "awayTeam": "Эквадор",
     "phase": "1/16 финала"
@@ -707,37 +707,33 @@
     "id": "wc-089",
     "date": "04.07.2026",
     "time": "20:00",
-    "homeTeam": "1/8: пара 1",
-    "awayTeam": "1/8: пара 1",
-    "phase": "1/8 финала",
-    "isPlaceholder": true
+    "homeTeam": "Канада",
+    "awayTeam": "Марокко",
+    "phase": "1/8 финала"
   },
   "wc-090": {
     "id": "wc-090",
     "date": "05.07.2026",
     "time": "00:00",
-    "homeTeam": "1/8: пара 2",
-    "awayTeam": "1/8: пара 2",
-    "phase": "1/8 финала",
-    "isPlaceholder": true
+    "homeTeam": "Парагвай",
+    "awayTeam": "Франция",
+    "phase": "1/8 финала"
   },
   "wc-091": {
     "id": "wc-091",
     "date": "05.07.2026",
     "time": "23:00",
-    "homeTeam": "1/8: пара 3",
-    "awayTeam": "1/8: пара 3",
-    "phase": "1/8 финала",
-    "isPlaceholder": true
+    "homeTeam": "Бразилия",
+    "awayTeam": "Норвегия",
+    "phase": "1/8 финала"
   },
   "wc-092": {
     "id": "wc-092",
     "date": "06.07.2026",
     "time": "03:00",
-    "homeTeam": "1/8: пара 4",
-    "awayTeam": "1/8: пара 4",
-    "phase": "1/8 финала",
-    "isPlaceholder": true
+    "homeTeam": "Мексика",
+    "awayTeam": "Англия",
+    "phase": "1/8 финала"
   },
   "wc-093": {
     "id": "wc-093",
@@ -752,10 +748,9 @@
     "id": "wc-094",
     "date": "07.07.2026",
     "time": "03:00",
-    "homeTeam": "1/8: пара 6",
-    "awayTeam": "1/8: пара 6",
-    "phase": "1/8 финала",
-    "isPlaceholder": true
+    "homeTeam": "США",
+    "awayTeam": "Бельгия",
+    "phase": "1/8 финала"
   },
   "wc-095": {
     "id": "wc-095",

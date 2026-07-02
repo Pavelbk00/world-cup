@@ -130,14 +130,48 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                     </span>
                     <span className={`ph-entry-pts ph-pts-${e.points}`}>
                       <span>{e.points ? `+${e.points}` : e.points}</span>
-                      {e.playoffBonus && (
-                        <span className="ph-entry-pts-breakdown">
-                          {e.points - e.playoffBonus} счет
-                          {e.playoffMethod === "regular" && " + 1 осн. время"}
-                          {e.playoffMethod === "extraTime" && " + 3 доп. время"}
-                          {e.playoffMethod === "penalties" && " + 5 пенальти"}
-                        </span>
-                      )}
+                      {(() => {
+                        const base =
+                          e.points -
+                          (e.playoffBonus ?? 0) -
+                          (e.advancementBonus ?? 0);
+                        if (
+                          base === 0 &&
+                          !e.playoffBonus &&
+                          !e.advancementBonus
+                        )
+                          return null;
+                        const sameOutcome =
+                          (e.predHome > e.predAway &&
+                            row.actualHome > row.actualAway) ||
+                          (e.predHome < e.predAway &&
+                            row.actualHome < row.actualAway) ||
+                          (e.predHome === e.predAway &&
+                            row.actualHome === row.actualAway);
+                        const sameDiff =
+                          e.predHome - e.predAway ===
+                          row.actualHome - row.actualAway;
+                        const exact =
+                          e.predHome === row.actualHome &&
+                          e.predAway === row.actualAway;
+                        const label = exact
+                          ? "точный счет"
+                          : sameDiff
+                            ? "разница"
+                            : sameOutcome
+                              ? "исход"
+                              : "";
+                        return (
+                          <span className="ph-entry-pts-breakdown">
+                            {base > 0 ? `${base} ${label}` : ""}
+                            {e.advancementBonus && " + 1 проход"}
+                            {e.playoffMethod === "regular" && " + 1 осн. время"}
+                            {e.playoffMethod === "extraTime" &&
+                              " + 3 доп. время"}
+                            {e.playoffMethod === "penalties" && " + 5 пенальти"}
+                          </span>
+                        );
+                      })()}
                     </span>
                   </div>
                 ))}

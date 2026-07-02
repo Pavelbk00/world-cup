@@ -89,6 +89,8 @@ export interface PlayerScoreRow {
   groupStagePoints: number;
   /** Очки за способ победы в плей-офф */
   playoffBonusPoints: number;
+  /** Очки за угаданный проход команды в следующую стадию */
+  advancementPoints: number;
   /** Очки за лучшего бомбардира */
   topScorerPoints: number;
   /** Очки за призеров турнира */
