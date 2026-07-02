@@ -327,8 +327,10 @@
       "away": 0
     },
     "wc-081": {
-      "home": 2,
-      "away": 1
+      "home": 1,
+      "away": 1,
+      "winner": "Сенегал",
+      "method": "penalties"
     },
     "wc-082": {
       "home": 2,

@@ -26,5 +26,13 @@
   "wc-079": {
     "winner": "Мексика",
     "method": "regular"
+  },
+  "wc-080": {
+    "winner": "Англия",
+    "method": "regular"
+  },
+  "wc-082": {
+    "winner": "США",
+    "method": "regular"
   }
 }
