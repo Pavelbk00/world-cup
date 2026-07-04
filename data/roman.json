@@ -341,6 +341,14 @@
       "away": 1,
       "winner": "Австралия",
       "method": "penalties"
+    },
+    "wc-087": {
+      "home": 4,
+      "away": 0
+    },
+    "wc-088": {
+      "home": 2,
+      "away": 1
     }
   },
   "groupStandings": [],
