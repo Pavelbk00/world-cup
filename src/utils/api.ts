@@ -180,8 +180,9 @@ export interface PointsHistoryRow {
   date: string;
   time: string;
   phase: string;
-  actualHome: number;
-  actualAway: number;
+  actualHome: number | null;
+  actualAway: number | null;
+  isLive?: boolean;
   playoffWinner?: string;
   playoffMethod?: string;
   entries: PointsHistoryEntry[];

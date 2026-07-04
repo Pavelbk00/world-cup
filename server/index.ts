@@ -478,8 +478,9 @@ app.get("/api/points-history", async (req, res) => {
     date: string;
     time: string;
     phase: string;
-    actualHome: number;
-    actualAway: number;
+    actualHome: number | null;
+    actualAway: number | null;
+    isLive?: boolean;
     playoffWinner?: string;
     playoffMethod?: string;
     entries: Array<{
@@ -501,12 +502,46 @@ app.get("/api/points-history", async (req, res) => {
   for (const [matchId, matchDef] of Object.entries(matchesCatalog)) {
     if (matchDef.isPlaceholder) continue;
     const result = resultsData[matchId];
-    if (!result || result.home === null || result.away === null) continue;
+    const hasResult =
+      result != null && result.home !== null && result.away !== null;
+    const matchStarted = hasMatchStarted(matchId);
+    if (!hasResult && !matchStarted) continue;
+    const isLive = !hasResult && matchStarted;
 
     const actualPlayoff = playoffResults[matchId];
     const isPlayoff = !matchDef.phase.startsWith("Группа");
 
     const entries: HistoryRow["entries"] = [];
+    if (isLive) {
+      for (const p of allPlayers) {
+        const pred = p.predictions[matchId];
+        if (!pred) continue;
+        entries.push({
+          player: p.nickname,
+          login: p.login,
+          predHome: pred.home,
+          predAway: pred.away,
+          points: 0,
+          predWinner: pred.winner,
+          predMethod: pred.method,
+        });
+      }
+      entries.sort((a, b) => a.player.localeCompare(b.player, "ru"));
+      history.push({
+        matchId,
+        homeTeam: matchDef.homeTeam,
+        awayTeam: matchDef.awayTeam,
+        date: matchDef.date,
+        time: matchDef.time,
+        phase: matchDef.phase,
+        actualHome: null,
+        actualAway: null,
+        isLive: true,
+        entries,
+      });
+      continue;
+    }
+    if (!result || result.home === null || result.away === null) continue;
     for (const p of allPlayers) {
       const pred = p.predictions[matchId];
       if (!pred) continue;

@@ -2114,6 +2114,38 @@ margin: 0;
   text-shadow: 0 0 6px rgba(250, 204, 21, 0.2);
 }
 
+.ph-card-live {
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+}
+
+.ph-live-badge {
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: #fff;
+  background: #ef4444;
+  padding: 0.25rem 0.7rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  animation: ph-live-pulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes ph-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.ph-pts-live {
+  min-width: 3rem;
+}
+
 .ph-entry-pred-playoff {
   font-size: 0.75rem;
   color: #fbbf24;
@@ -2171,29 +2203,21 @@ margin: 0;
   white-space: normal;
 }
 
-.ph-pts-1 {
-  color: #86efac;
+.ph-pts-low {
+  color: #10b981;
 }
 
-.ph-pts-2 {
-  color: #6ee7a0;
-}
-
-.ph-pts-3 {
+.ph-pts-mid {
   color: #4ade80;
 }
 
-.ph-pts-4 {
-  color: #facc15;
+.ph-pts-high {
+  color: #fb923c;
 }
 
-.ph-pts-6 {
-  color: #f97316;
-}
-
-.ph-pts-11 {
-  color: #f59e0b;
-  text-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+.ph-pts-jackpot {
+  color: #fbbf24;
+  text-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
 }
 
 .ph-head {

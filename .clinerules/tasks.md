@@ -1,0 +1,1 @@
+Для PointsHistory сделай фильтры визуально аналогичными ParticipatePage

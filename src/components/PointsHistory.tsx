@@ -83,30 +83,37 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
       ) : (
         <div className="ph-cards">
           {displayedHistory.map((row) => (
-            <div key={row.matchId} className="ph-card">
+            <div
+              key={row.matchId}
+              className={`ph-card${row.isLive ? " ph-card-live" : ""}`}
+            >
               <div className="ph-card-header">
                 <div className="ph-card-match">
                   <span className="ph-card-teams">
                     {row.homeTeam} — {row.awayTeam}
                   </span>
-                  <span className="ph-card-date">
-                    {row.date.replace(/\.\d{4}$/, "")}
-                  </span>
+                  <span className="ph-card-date">{row.date}</span>
                 </div>
                 <div className="ph-card-score">
-                  Итог: {row.actualHome}:{row.actualAway}
-                  {row.actualHome === row.actualAway &&
-                    row.playoffWinner &&
-                    row.playoffMethod && (
-                      <span className="ph-card-playoff">
-                        {" "}
-                        (Победитель: {row.playoffWinner},{" "}
-                        {row.playoffMethod === "penalties"
-                          ? "по пенальти"
-                          : "в доп. время"}
-                        )
-                      </span>
-                    )}
+                  {row.isLive ? (
+                    <span className="ph-live-badge">LIVE</span>
+                  ) : (
+                    <>
+                      Итог: {row.actualHome}:{row.actualAway}
+                      {row.actualHome === row.actualAway &&
+                        row.playoffWinner &&
+                        row.playoffMethod && (
+                          <span className="ph-card-playoff">
+                            {" "}
+                            (Победитель: {row.playoffWinner},{" "}
+                            {row.playoffMethod === "penalties"
+                              ? "по пенальти"
+                              : "в доп. время"}
+                            )
+                          </span>
+                        )}
+                    </>
+                  )}
                 </div>
               </div>
               <div className="ph-card-entries">
@@ -128,51 +135,67 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                         </span>
                       )}
                     </span>
-                    <span className={`ph-entry-pts ph-pts-${e.points}`}>
-                      <span>{e.points ? `+${e.points}` : e.points}</span>
-                      {(() => {
-                        const base =
-                          e.points -
-                          (e.playoffBonus ?? 0) -
-                          (e.advancementBonus ?? 0);
-                        if (
-                          base === 0 &&
-                          !e.playoffBonus &&
-                          !e.advancementBonus
-                        )
-                          return null;
-                        const sameOutcome =
-                          (e.predHome > e.predAway &&
-                            row.actualHome > row.actualAway) ||
-                          (e.predHome < e.predAway &&
-                            row.actualHome < row.actualAway) ||
-                          (e.predHome === e.predAway &&
-                            row.actualHome === row.actualAway);
-                        const sameDiff =
-                          e.predHome - e.predAway ===
-                          row.actualHome - row.actualAway;
-                        const exact =
-                          e.predHome === row.actualHome &&
-                          e.predAway === row.actualAway;
-                        const label = exact
-                          ? "точный счет"
-                          : sameDiff
-                            ? "разница"
-                            : sameOutcome
-                              ? "исход"
-                              : "";
-                        return (
-                          <span className="ph-entry-pts-breakdown">
-                            {base > 0 ? `${base} ${label}` : ""}
-                            {e.advancementBonus && " + 1 проход"}
-                            {e.playoffMethod === "regular" && " + 1 осн. время"}
-                            {e.playoffMethod === "extraTime" &&
-                              " + 3 доп. время"}
-                            {e.playoffMethod === "penalties" && " + 5 пенальти"}
-                          </span>
-                        );
-                      })()}
-                    </span>
+                    {row.isLive ? (
+                      <span className="ph-entry-pts ph-pts-live" />
+                    ) : (
+                      <span
+                        className={`ph-entry-pts ${
+                          e.points >= 10
+                            ? "ph-pts-jackpot"
+                            : e.points >= 7
+                              ? "ph-pts-high"
+                              : e.points >= 4
+                                ? "ph-pts-mid"
+                                : "ph-pts-low"
+                        }`}
+                      >
+                        <span>{e.points ? `+${e.points}` : e.points}</span>
+                        {(() => {
+                          const base =
+                            e.points -
+                            (e.playoffBonus ?? 0) -
+                            (e.advancementBonus ?? 0);
+                          if (
+                            base === 0 &&
+                            !e.playoffBonus &&
+                            !e.advancementBonus
+                          )
+                            return null;
+                          const sameOutcome =
+                            (e.predHome > e.predAway &&
+                              row.actualHome! > row.actualAway!) ||
+                            (e.predHome < e.predAway &&
+                              row.actualHome! < row.actualAway!) ||
+                            (e.predHome === e.predAway &&
+                              row.actualHome === row.actualAway);
+                          const sameDiff =
+                            e.predHome - e.predAway ===
+                            row.actualHome! - row.actualAway!;
+                          const exact =
+                            e.predHome === row.actualHome &&
+                            e.predAway === row.actualAway;
+                          const label = exact
+                            ? "точный счет"
+                            : sameDiff
+                              ? "разница"
+                              : sameOutcome
+                                ? "исход"
+                                : "";
+                          return (
+                            <span className="ph-entry-pts-breakdown">
+                              {base > 0 ? `${base} ${label}` : ""}
+                              {e.advancementBonus && " + 1 проход"}
+                              {e.playoffMethod === "regular" &&
+                                " + 1 осн. время"}
+                              {e.playoffMethod === "extraTime" &&
+                                " + 3 доп. время"}
+                              {e.playoffMethod === "penalties" &&
+                                " + 5 пенальти"}
+                            </span>
+                          );
+                        })()}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
