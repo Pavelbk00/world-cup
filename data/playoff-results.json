@@ -38,5 +38,29 @@
   "wc-082": {
     "winner": "США",
     "method": "regular"
+  },
+  "wc-083": {
+    "winner": "Испания",
+    "method": "regular"
+  },
+  "wc-084": {
+    "winner": "Португалия",
+    "method": "regular"
+  },
+  "wc-085": {
+    "winner": "Швейцария",
+    "method": "regular"
+  },
+  "wc-088": {
+    "winner": "Колумбия",
+    "method": "regular"
+  },
+  "wc-086": {
+    "winner": "Египет",
+    "method": "penalties"
+  },
+  "wc-087": {
+    "winner": "Аргентина",
+    "method": "extraTime"
   }
 }

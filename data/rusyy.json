@@ -341,6 +341,30 @@
     "wc-083": {
       "home": 2,
       "away": 1
+    },
+    "wc-084": {
+      "home": 1,
+      "away": 1,
+      "winner": "Португалия",
+      "method": "extraTime"
+    },
+    "wc-085": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-086": {
+      "home": 1,
+      "away": 1,
+      "winner": "Египет",
+      "method": "penalties"
+    },
+    "wc-087": {
+      "home": 3,
+      "away": 1
+    },
+    "wc-088": {
+      "home": 2,
+      "away": 0
     }
   },
   "groupStandings": [],

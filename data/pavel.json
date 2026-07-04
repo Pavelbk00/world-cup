@@ -355,12 +355,22 @@
       "away": 1
     },
     "wc-087": {
-      "home": 3,
+      "home": 2,
       "away": 0
     },
     "wc-088": {
-      "home": 2,
+      "home": 1,
       "away": 0
+    },
+    "wc-089": {
+      "home": 1,
+      "away": 1,
+      "winner": "Марокко",
+      "method": "penalties"
+    },
+    "wc-090": {
+      "home": 0,
+      "away": 3
     }
   },
   "groupStandings": [],

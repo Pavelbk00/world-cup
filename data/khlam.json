@@ -329,6 +329,34 @@
     "wc-083": {
       "home": 3,
       "away": 1
+    },
+    "wc-086": {
+      "home": 1,
+      "away": 2
+    },
+    "wc-089": {
+      "home": 0,
+      "away": 2
+    },
+    "wc-090": {
+      "home": 0,
+      "away": 3
+    },
+    "wc-091": {
+      "home": 2,
+      "away": 2,
+      "winner": "Бразилия",
+      "method": "extraTime"
+    },
+    "wc-092": {
+      "home": 1,
+      "away": 1,
+      "winner": "Англия",
+      "method": "extraTime"
+    },
+    "wc-094": {
+      "home": 3,
+      "away": 0
     }
   },
   "groupStandings": [],
