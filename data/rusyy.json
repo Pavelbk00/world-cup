@@ -365,6 +365,16 @@
     "wc-088": {
       "home": 2,
       "away": 0
+    },
+    "wc-089": {
+      "home": 1,
+      "away": 1,
+      "winner": "Марокко",
+      "method": "extraTime"
+    },
+    "wc-090": {
+      "home": 0,
+      "away": 4
     }
   },
   "groupStandings": [],

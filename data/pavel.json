@@ -371,6 +371,36 @@
     "wc-090": {
       "home": 0,
       "away": 3
+    },
+    "wc-091": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-092": {
+      "home": 1,
+      "away": 1,
+      "winner": "Англия",
+      "method": "extraTime"
+    },
+    "wc-093": {
+      "home": 1,
+      "away": 2
+    },
+    "wc-094": {
+      "home": 1,
+      "away": 1,
+      "winner": "США",
+      "method": "penalties"
+    },
+    "wc-095": {
+      "home": 3,
+      "away": 1
+    },
+    "wc-096": {
+      "home": 1,
+      "away": 1,
+      "winner": "Колумбия",
+      "method": "extraTime"
     }
   },
   "groupStandings": [],

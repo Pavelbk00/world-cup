@@ -364,11 +364,23 @@
       "home": 0,
       "away": 1
     },
+    "wc-093": {
+      "home": 2,
+      "away": 1
+    },
     "wc-094": {
       "home": 1,
       "away": 1,
       "winner": "США",
       "method": "extraTime"
+    },
+    "wc-095": {
+      "home": 3,
+      "away": 0
+    },
+    "wc-096": {
+      "home": 0,
+      "away": 2
     }
   },
   "groupStandings": [],
