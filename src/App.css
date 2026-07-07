@@ -739,7 +739,7 @@ table.standings {
 
 table.standings th,
 table.standings td {
-  padding: 0.35rem 0.25rem;
+  padding: 0.35rem 0.55rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
@@ -2048,6 +2048,7 @@ margin: 0;
 /* ── Points History (карточки) ── */
 .points-history-section {
   margin-top: 1.5rem;
+  width: fit-content;
 }
 
 .ph-cards {
@@ -2240,7 +2241,7 @@ margin: 0;
     font-size: 0.82rem;
   }
   .ph-card-score {
-    width: 100%;
+    width: fit-content;
     white-space: normal;
     word-break: break-word;
   }

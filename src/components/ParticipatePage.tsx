@@ -115,7 +115,10 @@ export function ParticipatePage({
   const canSave = hasAnyScore && !hasIncompletePlayoffDraws;
 
   return (
-    <section className="panel participate-panel" style={{ maxWidth: "800px" }}>
+    <section
+      className="panel participate-panel"
+      style={{ maxWidth: "800px", width: "fit-content" }}
+    >
       <div className="panel-head">
         <h2>Ваши прогнозы</h2>
       </div>

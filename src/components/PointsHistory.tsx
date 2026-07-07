@@ -94,27 +94,25 @@ export function PointsHistory({ currentUserLogin }: PointsHistoryProps) {
                   </span>
                   <span className="ph-card-date">{row.date}</span>
                 </div>
-                <div className="ph-card-score">
-                  {row.isLive ? (
-                    <span className="ph-live-badge">LIVE</span>
-                  ) : (
-                    <>
-                      Итог: {row.actualHome}:{row.actualAway}
-                      {row.actualHome === row.actualAway &&
-                        row.playoffWinner &&
-                        row.playoffMethod && (
-                          <span className="ph-card-playoff">
-                            {" "}
-                            (Победитель: {row.playoffWinner},{" "}
-                            {row.playoffMethod === "penalties"
-                              ? "по пенальти"
-                              : "в доп. время"}
-                            )
-                          </span>
-                        )}
-                    </>
-                  )}
-                </div>
+                {row.isLive ? (
+                  <span className="ph-live-badge">LIVE</span>
+                ) : (
+                  <div className="ph-card-score">
+                    Итог: {row.actualHome}:{row.actualAway}
+                    {row.actualHome === row.actualAway &&
+                      row.playoffWinner &&
+                      row.playoffMethod && (
+                        <span className="ph-card-playoff">
+                          {" "}
+                          (Победитель: {row.playoffWinner},{" "}
+                          {row.playoffMethod === "penalties"
+                            ? "по пенальти"
+                            : "в доп. время"}
+                          )
+                        </span>
+                      )}
+                  </div>
+                )}
               </div>
               <div className="ph-card-entries">
                 {row.entries.map((e) => (

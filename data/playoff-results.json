@@ -90,5 +90,9 @@
   "wc-095": {
     "winner": "Аргентина",
     "method": "regular"
+  },
+  "wc-096": {
+    "winner": "Швейцария",
+    "method": "penalties"
   }
 }
