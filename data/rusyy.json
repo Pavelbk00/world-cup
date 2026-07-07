@@ -399,6 +399,16 @@
       "away": 1,
       "winner": "США",
       "method": "penalties"
+    },
+    "wc-095": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-096": {
+      "home": 1,
+      "away": 1,
+      "winner": "Колумбия",
+      "method": "penalties"
     }
   },
   "groupStandings": [],
