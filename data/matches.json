@@ -730,7 +730,7 @@
   "wc-092": {
     "id": "wc-092",
     "date": "06.07.2026",
-    "time": "03:00",
+    "time": "04:00",
     "homeTeam": "Мексика",
     "awayTeam": "Англия",
     "phase": "1/8 финала"
@@ -771,28 +771,25 @@
     "id": "wc-097",
     "date": "09.07.2026",
     "time": "23:00",
-    "homeTeam": "1/4: пара 1",
-    "awayTeam": "1/4: пара 1",
-    "phase": "1/4 финала",
-    "isPlaceholder": true
+    "homeTeam": "Франция",
+    "awayTeam": "Марокко",
+    "phase": "1/4 финала"
   },
   "wc-098": {
     "id": "wc-098",
     "date": "10.07.2026",
     "time": "22:00",
-    "homeTeam": "1/4: пара 2",
-    "awayTeam": "1/4: пара 2",
-    "phase": "1/4 финала",
-    "isPlaceholder": true
+    "homeTeam": "Испания",
+    "awayTeam": "Бельгия",
+    "phase": "1/4 финала"
   },
   "wc-099": {
     "id": "wc-099",
     "date": "12.07.2026",
     "time": "00:00",
-    "homeTeam": "1/4: пара 3",
-    "awayTeam": "1/4: пара 3",
-    "phase": "1/4 финала",
-    "isPlaceholder": true
+    "homeTeam": "Норвегия",
+    "awayTeam": "Англия",
+    "phase": "1/4 финала"
   },
   "wc-100": {
     "id": "wc-100",
