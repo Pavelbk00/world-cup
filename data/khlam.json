@@ -343,16 +343,20 @@
       "away": 3
     },
     "wc-091": {
-      "home": 2,
-      "away": 2,
-      "winner": "Бразилия",
-      "method": "extraTime"
+      "home": 4,
+      "away": 2
     },
     "wc-092": {
       "home": 1,
       "away": 1,
       "winner": "Англия",
       "method": "extraTime"
+    },
+    "wc-093": {
+      "home": 2,
+      "away": 2,
+      "winner": "Португалия",
+      "method": "penalties"
     },
     "wc-094": {
       "home": 3,

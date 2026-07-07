@@ -62,5 +62,29 @@
   "wc-088": {
     "winner": "Колумбия",
     "method": "regular"
+  },
+  "wc-089": {
+    "winner": "Марокко",
+    "method": "regular"
+  },
+  "wc-090": {
+    "winner": "Франция",
+    "method": "regular"
+  },
+  "wc-091": {
+    "winner": "Норвегия",
+    "method": "regular"
+  },
+  "wc-092": {
+    "winner": "Англия",
+    "method": "regular"
+  },
+  "wc-093": {
+    "winner": "Испания",
+    "method": "regular"
+  },
+  "wc-094": {
+    "winner": "Бельгия",
+    "method": "regular"
   }
 }

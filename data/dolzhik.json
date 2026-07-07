@@ -355,6 +355,32 @@
     "wc-088": {
       "home": 1,
       "away": 2
+    },
+    "wc-089": {
+      "home": 0,
+      "away": 2
+    },
+    "wc-090": {
+      "home": 0,
+      "away": 3
+    },
+    "wc-091": {
+      "home": 2,
+      "away": 0
+    },
+    "wc-092": {
+      "home": 0,
+      "away": 1
+    },
+    "wc-093": {
+      "home": 2,
+      "away": 2,
+      "winner": "Португалия",
+      "method": "penalties"
+    },
+    "wc-094": {
+      "home": 1,
+      "away": 2
     }
   },
   "groupStandings": [],
