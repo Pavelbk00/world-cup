@@ -795,10 +795,9 @@
     "id": "wc-100",
     "date": "12.07.2026",
     "time": "04:00",
-    "homeTeam": "1/4: пара 4",
-    "awayTeam": "1/4: пара 4",
-    "phase": "1/4 финала",
-    "isPlaceholder": true
+    "homeTeam": "Аргентина",
+    "awayTeam": "Швейцария",
+    "phase": "1/4 финала"
   },
   "wc-101": {
     "id": "wc-101",

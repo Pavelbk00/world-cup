@@ -381,6 +381,20 @@
     "wc-096": {
       "home": 0,
       "away": 2
+    },
+    "wc-097": {
+      "home": 2,
+      "away": 1
+    },
+    "wc-098": {
+      "home": 1,
+      "away": 0
+    },
+    "wc-099": {
+      "home": 1,
+      "away": 1,
+      "winner": "Англия",
+      "method": "extraTime"
     }
   },
   "groupStandings": [],

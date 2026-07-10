@@ -409,6 +409,10 @@
       "away": 1,
       "winner": "Колумбия",
       "method": "penalties"
+    },
+    "wc-097": {
+      "home": 2,
+      "away": 1
     }
   },
   "groupStandings": [],
