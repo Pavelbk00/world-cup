@@ -395,6 +395,10 @@
       "away": 1,
       "winner": "Англия",
       "method": "extraTime"
+    },
+    "wc-100": {
+      "home": 2,
+      "away": 0
     }
   },
   "groupStandings": [],
