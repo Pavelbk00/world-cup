@@ -361,6 +361,12 @@
     "wc-094": {
       "home": 3,
       "away": 0
+    },
+    "wc-099": {
+      "home": 2,
+      "away": 2,
+      "winner": "Англия",
+      "method": "penalties"
     }
   },
   "groupStandings": [],
