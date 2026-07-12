@@ -102,5 +102,13 @@
   "wc-098": {
     "winner": "Испания",
     "method": "regular"
+  },
+  "wc-099": {
+    "winner": "Англия",
+    "method": "extraTime"
+  },
+  "wc-100": {
+    "winner": "Аргентина",
+    "method": "extraTime"
   }
 }

@@ -399,10 +399,8 @@
       "method": "penalties"
     },
     "wc-100": {
-      "home": 1,
-      "away": 1,
-      "winner": "Аргентина",
-      "method": "penalties"
+      "home": 2,
+      "away": 1
     }
   },
   "groupStandings": [],

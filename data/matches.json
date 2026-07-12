@@ -803,19 +803,17 @@
     "id": "wc-101",
     "date": "14.07.2026",
     "time": "22:00",
-    "homeTeam": "1/2: пара 1",
-    "awayTeam": "1/2: пара 1",
-    "phase": "1/2 финала",
-    "isPlaceholder": true
+    "homeTeam": "Франция",
+    "awayTeam": "Испания",
+    "phase": "1/2 финала"
   },
   "wc-102": {
     "id": "wc-102",
     "date": "15.07.2026",
     "time": "22:00",
-    "homeTeam": "1/2: пара 2",
-    "awayTeam": "1/2: пара 2",
-    "phase": "1/2 финала",
-    "isPlaceholder": true
+    "homeTeam": "Англия",
+    "awayTeam": "Аргентина",
+    "phase": "1/2 финала"
   },
   "wc-103": {
     "id": "wc-103",
