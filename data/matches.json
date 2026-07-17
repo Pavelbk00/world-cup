@@ -819,18 +819,16 @@
     "id": "wc-103",
     "date": "19.07.2026",
     "time": "00:00",
-    "homeTeam": "Матч за 3-е",
-    "awayTeam": "Матч за 3-е",
-    "phase": "Матч за 3-е место",
-    "isPlaceholder": true
+    "homeTeam": "Франция",
+    "awayTeam": "Англия",
+    "phase": "Матч за 3-е место"
   },
   "wc-104": {
     "id": "wc-104",
     "date": "19.07.2026",
     "time": "22:00",
-    "homeTeam": "Финал",
-    "awayTeam": "Финал",
-    "phase": "Финал",
-    "isPlaceholder": true
+    "homeTeam": "Испания",
+    "awayTeam": "Аргентина",
+    "phase": "Финал"
   }
 }

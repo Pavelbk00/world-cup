@@ -417,6 +417,18 @@
     "wc-100": {
       "home": 2,
       "away": 0
+    },
+    "wc-101": {
+      "home": 1,
+      "away": 1,
+      "winner": "Франция",
+      "method": "penalties"
+    },
+    "wc-102": {
+      "home": 2,
+      "away": 2,
+      "winner": "Англия",
+      "method": "penalties"
     }
   },
   "groupStandings": [],

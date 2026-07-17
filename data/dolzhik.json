@@ -405,6 +405,12 @@
     "wc-100": {
       "home": 2,
       "away": 1
+    },
+    "wc-102": {
+      "home": 2,
+      "away": 2,
+      "winner": "Аргентина",
+      "method": "penalties"
     }
   },
   "groupStandings": [],
