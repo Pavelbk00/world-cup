@@ -1,9 +1,5 @@
 import { resultFromState } from "./matchResultUtils";
-import {
-  GOLDEN_BOOT_WINNER,
-  MEDALISTS_RESULT,
-  PLAYER_GOALS,
-} from "./tournamentResults";
+import { TOURNAMENT_RESULTS } from "./tournamentResults";
 import type { PlayoffResultMap } from "./utils/api";
 import type {
   MatchId,
@@ -286,13 +282,13 @@ function scoreTopScorer(player: PlayerState): number {
   if (!player.topScorer) return 0;
   const key = player.topScorer.trim();
   if (!key) return 0;
-  const goalEntry = Object.entries(PLAYER_GOALS).find(
+  const goalEntry = Object.entries(TOURNAMENT_RESULTS.playerGoals).find(
     ([name]) => normalizeName(name) === normalizeName(key),
   );
   let points = (goalEntry?.[1] ?? 0) * 2;
   if (
-    GOLDEN_BOOT_WINNER &&
-    normalizeName(key) === normalizeName(GOLDEN_BOOT_WINNER)
+    TOURNAMENT_RESULTS.goldenBootWinner &&
+    normalizeName(key) === normalizeName(TOURNAMENT_RESULTS.goldenBootWinner)
   ) {
     points += 20;
   }
@@ -300,21 +296,21 @@ function scoreTopScorer(player: PlayerState): number {
 }
 
 function scoreMedalists(player: PlayerState): number {
-  if (!player.medalists || !MEDALISTS_RESULT) return 0;
+  if (!player.medalists || !TOURNAMENT_RESULTS.medalistsResult) return 0;
   let points = 0;
   if (
     normalizeName(player.medalists.gold) ===
-    normalizeName(MEDALISTS_RESULT.gold)
+    normalizeName(TOURNAMENT_RESULTS.medalistsResult.gold)
   )
     points += 50;
   if (
     normalizeName(player.medalists.silver) ===
-    normalizeName(MEDALISTS_RESULT.silver)
+    normalizeName(TOURNAMENT_RESULTS.medalistsResult.silver)
   )
     points += 35;
   if (
     normalizeName(player.medalists.bronze) ===
-    normalizeName(MEDALISTS_RESULT.bronze)
+    normalizeName(TOURNAMENT_RESULTS.medalistsResult.bronze)
   )
     points += 20;
   return points;
@@ -324,6 +320,7 @@ export function computeStandings(
   matches: MatchResultState[],
   players: PlayerState[],
   playoffResults: PlayoffResultMap = {},
+  isTournamentFinished = false,
 ): PlayerScoreRow[] {
   const rows: PlayerScoreRow[] = [];
   const { allGroupsFinished, placementsByGroup, qualifiedTeams } =
@@ -367,8 +364,8 @@ export function computeStandings(
     );
     const playoffBonusPoints = scorePlayoffBonus(p, playoffResults, matchDefs);
     const advancementPoints = scoreAdvancement(p, matches, playoffResults);
-    const topScorerPoints = scoreTopScorer(p);
-    const medalistPoints = scoreMedalists(p);
+    const topScorerPoints = isTournamentFinished ? scoreTopScorer(p) : 0;
+    const medalistPoints = isTournamentFinished ? scoreMedalists(p) : 0;
     total +=
       groupStagePoints +
       playoffBonusPoints +

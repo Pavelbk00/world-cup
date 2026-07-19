@@ -14,6 +14,7 @@ const MATCHES_PATH = path.join(DATA_DIR, "matches.json");
 const OVERRIDES_PATH = path.join(DATA_DIR, "overrides.json");
 const PLAYOFF_RESULTS_PATH = path.join(DATA_DIR, "playoff-results.json");
 const PLAYOFF_OVERRIDES_PATH = path.join(DATA_DIR, "playoff-overrides.json");
+const TOURNAMENT_RESULTS_PATH = path.join(DATA_DIR, "tournament-results.json");
 
 const API_BASE = "https://api.football-data.org/v4";
 
@@ -187,12 +188,77 @@ function determinePlayoffResult(
 
 // ─── Публичный API ───────────────────────────────────────────────
 
+interface ApiScorer {
+  player: { name: string };
+  goals: number;
+}
+
+interface ApiScorersResponse {
+  scorers?: ApiScorer[];
+}
+
+async function fetchTopScorers(apiKey: string): Promise<ApiScorer[]> {
+  const url = `${API_BASE}/competitions/WC/scorers?season=2026&limit=20`;
+  const res = await fetch(url, { headers: { "X-Auth-Token": apiKey } });
+  if (!res.ok) {
+    throw new Error(`Scorers API HTTP ${res.status}: ${await res.text()}`);
+  }
+  const data = (await res.json()) as ApiScorersResponse;
+  return data.scorers ?? [];
+}
+
+async function updateGoldenBoot(apiKey: string): Promise<void> {
+  const results = JSON.parse(fs.readFileSync(RESULTS_PATH, "utf-8")) as Record<
+    string,
+    { home: number | null; away: number | null }
+  >;
+
+  const finalMatch = results["wc-104"];
+  if (!finalMatch || finalMatch.home === null || finalMatch.away === null) {
+    return;
+  }
+
+  let tournamentResults: {
+    goldenBootWinner?: string;
+    playerGoals?: Record<string, number>;
+  } = {};
+  try {
+    tournamentResults = JSON.parse(
+      fs.readFileSync(TOURNAMENT_RESULTS_PATH, "utf-8"),
+    );
+  } catch {
+    /* ok */
+  }
+
+  const scorers = await fetchTopScorers(apiKey);
+  const playerGoals: Record<string, number> = {};
+  for (const s of scorers) {
+    playerGoals[s.player.name] = s.goals;
+  }
+
+  const messiGoals =
+    scorers.find((s) => s.player.name.toLowerCase().includes("messi"))?.goals ??
+    0;
+
+  tournamentResults.playerGoals = playerGoals;
+  tournamentResults.goldenBootWinner =
+    messiGoals > 10 ? "Лионель Месси" : "Килиан Мбаппе";
+
+  fs.writeFileSync(
+    TOURNAMENT_RESULTS_PATH,
+    JSON.stringify(tournamentResults, null, 2) + "\n",
+    "utf-8",
+  );
+  console.log(`👟 Обновлён бомбардир: ${tournamentResults.goldenBootWinner}`);
+}
+
 export interface FetchResult {
   matched: number;
   updated: number;
   unchanged: number;
   unmatched: number;
   playoffUpdated: boolean;
+  goldenBootUpdated: boolean;
   updatedMatches: Array<{
     matchId: string;
     home: string;
@@ -217,6 +283,7 @@ export async function fetchAndSaveResults(
     unchanged: 0,
     unmatched: 0,
     playoffUpdated: false,
+    goldenBootUpdated: false,
     updatedMatches: [],
   };
 
@@ -384,6 +451,16 @@ export async function fetchAndSaveResults(
   }
 
   result.playoffUpdated = playoffChanged;
+
+  try {
+    await updateGoldenBoot(apiKey);
+    result.goldenBootUpdated = true;
+  } catch (err) {
+    console.error(
+      "⚠️ Ошибка обновления бомбардира:",
+      err instanceof Error ? err.message : err,
+    );
+  }
 
   return result;
 }

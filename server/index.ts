@@ -687,6 +687,19 @@ app.get("/api/playoff-results", async (_req, res) => {
   }
 });
 
+// GET /api/tournament-results — долгосрочные ставки (бомбардир + голы)
+app.get("/api/tournament-results", async (_req, res) => {
+  try {
+    const raw = await fs.readFile(
+      path.join(DATA_DIR, "tournament-results.json"),
+      "utf-8",
+    );
+    res.json(JSON.parse(raw));
+  } catch {
+    res.json({ goldenBootWinner: null, playerGoals: {} });
+  }
+});
+
 // GET /api/group-results — реальные групповые таблицы (из group-results.json)
 app.get("/api/group-results", async (_req, res) => {
   try {

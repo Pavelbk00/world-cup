@@ -31,9 +31,9 @@ if (!apiKey) {
 
 if (!apiKey) {
   console.error(
-    '❌ Укажите FOOTBALL_DATA_KEY (в .env или через переменную окружения):\n' +
-    '   FOOTBALL_DATA_KEY=ваш_ключ npm run fetch-results\n\n' +
-    '   Получить бесплатный ключ: https://www.football-data.org/client/register'
+    "❌ Укажите FOOTBALL_DATA_KEY (в .env или через переменную окружения):\n" +
+      "   FOOTBALL_DATA_KEY=ваш_ключ npm run fetch-results\n\n" +
+      "   Получить бесплатный ключ: https://www.football-data.org/client/register",
   );
   process.exit(1);
 }
@@ -48,9 +48,15 @@ async function main() {
     console.log("🔄 Обновлённые результаты:");
     for (const m of r.updatedMatches) {
       const prev = m.prevHome !== null ? `${m.prevHome}:${m.prevAway}` : "—";
-      console.log(`   ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}  (было ${prev})`);
+      console.log(
+        `   ${m.matchId} ${m.home} ${m.homeScore}:${m.awayScore} ${m.away}  (было ${prev})`,
+      );
     }
     console.log();
+  }
+
+  if (r.goldenBootUpdated) {
+    console.log("👟 Бомбардир обновлён\n");
   }
 
   console.log("═".repeat(45));

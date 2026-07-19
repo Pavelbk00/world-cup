@@ -7,8 +7,10 @@ import {
   isPlayoffPhase,
 } from "./matchUtils";
 import { computeStandings } from "./scoring";
+import { resultFromState } from "./matchResultUtils";
 import type { PlayoffResultMap } from "./utils/api";
 import { loadPlayoffResultsApi } from "./utils/api";
+import { loadTournamentResults, deriveMedalists } from "./tournamentResults";
 import type {
   MatchDef,
   MatchId,
@@ -214,6 +216,7 @@ export function App() {
   );
   const [playoffResults, setPlayoffResults] = useState<PlayoffResultMap>({});
   const [playoffTick, setPlayoffTick] = useState(0);
+  const [tournamentTick, setTournamentTick] = useState(0);
 
   // On mount, load players from API and match results
   useEffect(() => {
@@ -288,13 +291,34 @@ export function App() {
       const data = await loadPlayoffResultsApi();
       setPlayoffResults(data);
       setPlayoffTick((n) => n + 1);
+      await loadTournamentResults();
+      setTournamentTick((n) => n + 1);
     })();
   }, []);
 
+  const isTournamentFinished = useMemo(() => {
+    const finalMatch = matches.find((m) => m.def.id === "wc-104");
+    const finalResult = finalMatch ? resultFromState(finalMatch) : null;
+    return !!finalResult;
+  }, [matches]);
+
+  useEffect(() => {
+    deriveMedalists(playoffResults, matches);
+    setTournamentTick((n) => n + 1);
+  }, [playoffResults, matches]);
+
   const standings = useMemo(
-    () => computeStandings(matches, players, playoffResults),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [matches, players, playoffTick, playoffResults],
+    () =>
+      computeStandings(matches, players, playoffResults, isTournamentFinished),
+    // eslint-disable-next-line react-hooks/exhausting-deps
+    [
+      matches,
+      players,
+      playoffTick,
+      playoffResults,
+      isTournamentFinished,
+      tournamentTick,
+    ],
   );
 
   const [page, setPage] = useState<AppPage>(() => {
@@ -933,6 +957,8 @@ export function App() {
           <>
             <StandingsPage
               standingsByPlayerId={standingsByPlayerId}
+              players={players}
+              isTournamentFinished={isTournamentFinished}
               lastFinishedMatchLabel={lastFinishedMatchLabel}
               onSelectPlayer={setSelectedPlayerId}
             />
