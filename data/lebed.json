@@ -407,6 +407,10 @@
       "away": 1,
       "winner": "Англия",
       "method": "penalties"
+    },
+    "wc-103": {
+      "home": 2,
+      "away": 0
     }
   },
   "groupStandings": [],

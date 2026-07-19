@@ -411,6 +411,10 @@
       "away": 2,
       "winner": "Аргентина",
       "method": "penalties"
+    },
+    "wc-103": {
+      "home": 3,
+      "away": 1
     }
   },
   "groupStandings": [],
