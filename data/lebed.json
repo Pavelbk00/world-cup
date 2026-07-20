@@ -411,6 +411,10 @@
     "wc-103": {
       "home": 2,
       "away": 0
+    },
+    "wc-104": {
+      "home": 2,
+      "away": 1
     }
   },
   "groupStandings": [],
