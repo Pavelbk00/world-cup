@@ -412,7 +412,7 @@
     "away": 6
   },
   "wc-104": {
-    "home": null,
-    "away": null
+    "home": 0,
+    "away": 0
   }
 }

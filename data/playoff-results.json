@@ -122,5 +122,9 @@
   "wc-103": {
     "winner": "Англия",
     "method": "regular"
+  },
+  "wc-104": {
+    "winner": "Испания",
+    "method": "extraTime"
   }
 }
