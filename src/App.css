@@ -1604,7 +1604,6 @@ code.inline {
 /* Карточки */
 .hall-of-fame-cards {
   display: flex;
-  flex-direction: column;
   gap: 1.25rem;
   position: relative;
   z-index: 1;
@@ -1624,6 +1623,7 @@ code.inline {
   border-radius: 16px;
   padding: 1.25rem;
   transition: all 0.3s ease;
+  width: fit-content;
 }
 
 .hall-of-fame-card:hover {
